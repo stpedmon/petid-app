@@ -1,19 +1,64 @@
 'use client'
+import { useState } from 'react'
 import { useTheme } from '@/lib/ThemeContext'
 import { useAuth } from '@/lib/AuthContext'
 import { themes, ThemeId } from '@/lib/themes'
+import { supabase } from '@/lib/supabase'
 import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
-import { Check, User, Palette, LogOut, ChevronRight, HelpCircle, Shield } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { Check, User, Palette, LogOut, ChevronRight, HelpCircle, Shield, Trash2, AlertTriangle } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export const dynamic = 'force-dynamic'
 
 export default function SettingsPage() {
   const { theme, themeId, setThemeId } = useTheme()
   const { user, signOut } = useAuth()
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   const themeList = Object.values(themes)
+
+  const handleDeleteAccount = async () => {
+    if (!user || deleteConfirmText !== 'ELIMINAR') return
+    setDeleting(true)
+    try {
+      // Delete user's pets, pet_owners links, vaccines, photos
+      const { data: ownerData } = await supabase
+        .from('petid_pet_owners')
+        .select('pet_id')
+        .eq('user_id', user.id)
+
+      if (ownerData && ownerData.length > 0) {
+        const petIds = ownerData.map((o: any) => o.pet_id)
+
+        // Delete vaccine records
+        await supabase.from('petid_vaccine_records').delete().in('pet_id', petIds)
+
+        // Delete pet photos
+        await supabase.from('petid_pet_photos').delete().in('pet_id', petIds)
+
+        // Delete pet_owners links
+        await supabase.from('petid_pet_owners').delete().eq('user_id', user.id)
+
+        // Delete pets
+        await supabase.from('petid_pets').delete().in('id', petIds)
+      }
+
+      // Delete user record
+      await supabase.from('petid_users').delete().eq('id', user.id)
+
+      // Sign out
+      await signOut()
+      localStorage.removeItem('petid_onboarded')
+      window.location.href = '/login'
+    } catch (e) {
+      console.error('Error deleting account:', e)
+      alert('Error al eliminar la cuenta. Intenta de nuevo.')
+    }
+    setDeleting(false)
+  }
 
   return (
     <div className="min-h-screen pb-24" style={{ background: theme.bg }}>
@@ -165,9 +210,103 @@ export default function SettingsPage() {
           Cerrar sesión
         </motion.button>
 
+        {/* Delete account */}
+        <motion.button
+          initial={{ y: 10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.35 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => setShowDeleteModal(true)}
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-medium"
+          style={{
+            color: theme.textMuted,
+          }}
+        >
+          <Trash2 size={14} />
+          Eliminar mi cuenta y datos
+        </motion.button>
+
         <p className="text-center text-[10px] pt-2" style={{ color: theme.textMuted }}>
           Pet ID v1.0
         </p>
+
+      {/* Delete confirmation modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center px-6"
+            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
+            onClick={() => !deleting && setShowDeleteModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm rounded-3xl p-6 relative"
+              style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
+            >
+              <div className="text-center mb-5">
+                <div
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                  style={{ background: 'rgba(239,68,68,0.1)' }}
+                >
+                  <AlertTriangle size={32} color="#ef4444" />
+                </div>
+                <h3 className="text-lg font-bold mb-1" style={{ color: theme.text }}>
+                  Eliminar Cuenta
+                </h3>
+                <p className="text-xs leading-relaxed" style={{ color: theme.textMuted }}>
+                  Esta acción eliminará permanentemente tu cuenta, todas tus mascotas registradas, historial de vacunas y fotos. Esta acción no se puede deshacer.
+                </p>
+              </div>
+
+              <div className="mb-4">
+                <label className="text-[11px] font-semibold block mb-2" style={{ color: theme.textMuted }}>
+                  Escribe <span style={{ color: '#ef4444' }}>ELIMINAR</span> para confirmar
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="ELIMINAR"
+                  className="w-full px-4 py-3 rounded-xl text-sm font-medium outline-none"
+                  style={{
+                    background: theme.bg,
+                    border: `1.5px solid ${deleteConfirmText === 'ELIMINAR' ? '#ef4444' : theme.border}`,
+                    color: theme.text,
+                  }}
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setShowDeleteModal(false); setDeleteConfirmText('') }}
+                  disabled={deleting}
+                  className="flex-1 py-3 rounded-xl text-sm font-semibold"
+                  style={{ background: theme.bg, color: theme.text, border: `1px solid ${theme.border}` }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleteConfirmText !== 'ELIMINAR' || deleting}
+                  className="flex-1 py-3 rounded-xl text-sm font-bold text-white transition-opacity"
+                  style={{
+                    background: deleteConfirmText === 'ELIMINAR' ? '#ef4444' : '#999',
+                    opacity: deleteConfirmText === 'ELIMINAR' ? 1 : 0.4,
+                  }}
+                >
+                  {deleting ? 'Eliminando...' : 'Eliminar'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       </div>
 
       <BottomNav />
