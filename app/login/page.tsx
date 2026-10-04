@@ -2,20 +2,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Dog, Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, User, Phone, ArrowRight } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export const dynamic = 'force-dynamic'
-
-const pawPositions = [
-  { top: '8%', left: '10%', size: 28, delay: '0s', dur: '6s' },
-  { top: '15%', right: '15%', size: 22, delay: '1s', dur: '7s' },
-  { top: '30%', left: '5%', size: 32, delay: '2s', dur: '5s' },
-  { top: '45%', right: '8%', size: 26, delay: '0.5s', dur: '8s' },
-  { top: '60%', left: '12%', size: 20, delay: '3s', dur: '6s' },
-  { top: '70%', right: '20%', size: 30, delay: '1.5s', dur: '7s' },
-  { top: '85%', left: '20%', size: 24, delay: '2.5s', dur: '5.5s' },
-  { bottom: '10%', right: '10%', size: 28, delay: '0.8s', dur: '6.5s' },
-]
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -42,7 +32,6 @@ export default function LoginPage() {
         })
         if (signUpError) throw signUpError
 
-        // Create user in petid.users
         if (data.user) {
           await supabase.from('petid_users').insert({
             id: data.user.id,
@@ -52,7 +41,7 @@ export default function LoginPage() {
             role: 'owner'
           })
         }
-        router.push('/dashboard')
+        router.push('/onboarding')
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
         if (signInError) throw signInError
@@ -66,122 +55,248 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #1B6B4A 0%, #145236 50%, #0d3d28 100%)' }}>
+    <div className="min-h-screen flex flex-col relative overflow-hidden"
+      style={{ background: '#0a0f1a' }}>
+
+      {/* Animated gradient orbs */}
+      <div className="absolute inset-0 overflow-hidden">
+        <motion.div
+          animate={{
+            x: [0, 30, -20, 0],
+            y: [0, -40, 20, 0],
+            scale: [1, 1.2, 0.9, 1],
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute -top-20 -left-20 w-80 h-80 rounded-full opacity-30"
+          style={{ background: 'radial-gradient(circle, #1B6B4A 0%, transparent 70%)' }}
+        />
+        <motion.div
+          animate={{
+            x: [0, -40, 30, 0],
+            y: [0, 30, -30, 0],
+            scale: [1, 0.8, 1.1, 1],
+          }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-1/3 -right-20 w-72 h-72 rounded-full opacity-25"
+          style={{ background: 'radial-gradient(circle, #2ECC71 0%, transparent 70%)' }}
+        />
+        <motion.div
+          animate={{
+            x: [0, 20, -30, 0],
+            y: [0, -20, 40, 0],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute bottom-20 left-10 w-60 h-60 rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #145236 0%, transparent 70%)' }}
+        />
+      </div>
 
       {/* Floating paw prints */}
-      {pawPositions.map((p, i) => (
-        <div
+      {[...Array(6)].map((_, i) => (
+        <motion.div
           key={i}
-          className="absolute paw-float select-none pointer-events-none"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{
+            opacity: [0.05, 0.15, 0.05],
+            y: [-10, -30, -10],
+            x: [0, i % 2 ? 10 : -10, 0],
+          }}
+          transition={{
+            duration: 5 + i,
+            repeat: Infinity,
+            delay: i * 0.8,
+            ease: 'easeInOut',
+          }}
+          className="absolute text-white select-none pointer-events-none"
           style={{
-            top: p.top, left: p.left, right: p.right, bottom: p.bottom,
-            fontSize: p.size,
-            animationDelay: p.delay,
-            animationDuration: p.dur,
+            top: `${15 + i * 13}%`,
+            left: `${10 + (i * 17) % 80}%`,
+            fontSize: 18 + (i * 4),
           }}
         >
           🐾
-        </div>
+        </motion.div>
       ))}
 
-      {/* Login card */}
-      <div className="relative z-10 w-full max-w-md mx-4 bg-white/95 backdrop-blur-sm rounded-2xl p-8 shadow-2xl">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4"
-            style={{ background: '#e8f5ef' }}>
-            <Dog size={32} color="#1B6B4A" />
-          </div>
-          <h1 className="text-3xl font-bold" style={{ color: '#1B6B4A', fontFamily: "'Playfair Display', serif" }}>
+      {/* Content */}
+      <div className="relative z-10 flex-1 flex flex-col justify-center px-6 py-12">
+        {/* Logo & Title */}
+        <motion.div
+          initial={{ y: -30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-10"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
+            className="inline-flex items-center justify-center w-20 h-20 rounded-3xl mb-5"
+            style={{
+              background: 'linear-gradient(135deg, #1B6B4A, #2ECC71)',
+              boxShadow: '0 12px 40px rgba(27,107,74,0.4)',
+            }}
+          >
+            <span className="text-4xl">🐾</span>
+          </motion.div>
+          <h1 className="text-4xl font-bold text-white tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
             Pet ID
           </h1>
-          <p className="text-sm mt-1" style={{ color: '#6b7c8a' }}>
-            Identidad digital para tu mascota
+          <p className="text-white/40 text-sm mt-2 tracking-wide">
+            La identidad digital de tu mascota
           </p>
-        </div>
+        </motion.div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {isRegister && (
-            <>
+        {/* Form Card */}
+        <motion.div
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="w-full max-w-md mx-auto"
+        >
+          <div
+            className="rounded-3xl p-7 glass"
+            style={{
+              background: 'rgba(255,255,255,0.07)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            }}
+          >
+            {/* Tab toggle */}
+            <div
+              className="flex rounded-xl p-1 mb-6"
+              style={{ background: 'rgba(255,255,255,0.06)' }}
+            >
+              {['Iniciar sesión', 'Registrarse'].map((label, idx) => {
+                const isActive = idx === 0 ? !isRegister : isRegister
+                return (
+                  <button
+                    key={label}
+                    onClick={() => { setIsRegister(idx === 1); setError('') }}
+                    className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all relative"
+                    style={{
+                      color: isActive ? '#fff' : 'rgba(255,255,255,0.4)',
+                      background: isActive ? 'rgba(27,107,74,0.6)' : 'transparent',
+                    }}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-3.5">
+              <AnimatePresence mode="wait">
+                {isRegister && (
+                  <motion.div
+                    key="register-fields"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-3.5 overflow-hidden"
+                  >
+                    <div className="relative">
+                      <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2" color="rgba(255,255,255,0.3)" />
+                      <input
+                        type="text" placeholder="Nombre completo" required
+                        value={name} onChange={e => setName(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-white/20"
+                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.08)' }}
+                      />
+                    </div>
+                    <div className="relative">
+                      <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2" color="rgba(255,255,255,0.3)" />
+                      <input
+                        type="tel" placeholder="Teléfono"
+                        value={phone} onChange={e => setPhone(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-white/20"
+                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.08)' }}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <div className="relative">
+                <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2" color="rgba(255,255,255,0.3)" />
                 <input
-                  type="text"
-                  placeholder="Tu nombre completo"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  required
-                  className="w-full pl-4 pr-4 py-3 rounded-xl border text-sm outline-none focus:ring-2"
-                  style={{ borderColor: '#e0ebe5', background: '#f8faf9' }}
+                  type="email" placeholder="correo@ejemplo.com" required
+                  value={email} onChange={e => setEmail(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-white/20"
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.08)' }}
                 />
               </div>
+
               <div className="relative">
+                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2" color="rgba(255,255,255,0.3)" />
                 <input
-                  type="tel"
-                  placeholder="Teléfono"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  className="w-full pl-4 pr-4 py-3 rounded-xl border text-sm outline-none focus:ring-2"
-                  style={{ borderColor: '#e0ebe5', background: '#f8faf9' }}
+                  type={showPass ? 'text' : 'password'}
+                  placeholder="Contraseña" required minLength={6}
+                  value={password} onChange={e => setPassword(e.target.value)}
+                  className="w-full pl-11 pr-12 py-3.5 rounded-xl text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-white/20"
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.08)' }}
                 />
+                <button type="button" onClick={() => setShowPass(!showPass)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2">
+                  {showPass
+                    ? <EyeOff size={18} color="rgba(255,255,255,0.3)" />
+                    : <Eye size={18} color="rgba(255,255,255,0.3)" />
+                  }
+                </button>
               </div>
-            </>
-          )}
 
-          <div className="relative">
-            <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2" color="#6b7c8a" />
-            <input
-              type="email"
-              placeholder="correo@ejemplo.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              className="w-full pl-10 pr-4 py-3 rounded-xl border text-sm outline-none focus:ring-2"
-              style={{ borderColor: '#e0ebe5', background: '#f8faf9' }}
-            />
+              <AnimatePresence>
+                {error && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="text-sm text-center py-2.5 px-4 rounded-xl"
+                    style={{ background: 'rgba(239,68,68,0.15)', color: '#fca5a5' }}
+                  >
+                    {error}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+                style={{
+                  background: 'linear-gradient(135deg, #1B6B4A, #2ECC71)',
+                  boxShadow: '0 8px 25px rgba(27,107,74,0.35)',
+                }}
+              >
+                {loading ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                  />
+                ) : (
+                  <>
+                    {isRegister ? 'Crear cuenta' : 'Iniciar sesión'}
+                    <ArrowRight size={18} />
+                  </>
+                )}
+              </motion.button>
+            </form>
           </div>
 
-          <div className="relative">
-            <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2" color="#6b7c8a" />
-            <input
-              type={showPass ? 'text' : 'password'}
-              placeholder="Contraseña"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="w-full pl-10 pr-12 py-3 rounded-xl border text-sm outline-none focus:ring-2"
-              style={{ borderColor: '#e0ebe5', background: '#f8faf9' }}
-            />
-            <button type="button" onClick={() => setShowPass(!showPass)}
-              className="absolute right-3 top-1/2 -translate-y-1/2">
-              {showPass ? <EyeOff size={18} color="#6b7c8a" /> : <Eye size={18} color="#6b7c8a" />}
-            </button>
-          </div>
-
-          {error && (
-            <p className="text-red-500 text-sm text-center bg-red-50 p-2 rounded-lg">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl text-white font-semibold text-sm disabled:opacity-50"
-            style={{ background: '#1B6B4A' }}
+          {/* Footer */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="text-center text-xs mt-6"
+            style={{ color: 'rgba(255,255,255,0.25)' }}
           >
-            {loading ? '...' : isRegister ? 'Crear cuenta' : 'Iniciar sesión'}
-          </button>
-        </form>
-
-        <p className="text-center text-sm mt-6" style={{ color: '#6b7c8a' }}>
-          {isRegister ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}{' '}
-          <button
-            onClick={() => { setIsRegister(!isRegister); setError('') }}
-            className="font-semibold"
-            style={{ color: '#1B6B4A' }}
-          >
-            {isRegister ? 'Inicia sesión' : 'Regístrate'}
-          </button>
-        </p>
+            Protegemos los datos de tu mascota con encriptación
+          </motion.p>
+        </motion.div>
       </div>
     </div>
   )
