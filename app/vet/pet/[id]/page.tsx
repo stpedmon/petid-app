@@ -4,8 +4,9 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useTheme } from '@/lib/ThemeContext'
 import { ArrowLeft, Syringe, FileText, Edit } from 'lucide-react'
+import RoleGuard from '@/components/RoleGuard'
 
-export default function VetPetPage() {
+function VetPetContent() {
   const { theme } = useTheme()
   const router = useRouter()
   const params = useParams()
@@ -130,5 +131,13 @@ export default function VetPetPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function VetPetPage() {
+  return (
+    <RoleGuard allowedRoles={['vet', 'clinic_admin', 'admin']}>
+      <VetPetContent />
+    </RoleGuard>
   )
 }

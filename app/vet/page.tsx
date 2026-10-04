@@ -5,10 +5,11 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
 import { Search, Syringe, Dog, Users, BarChart3, LogOut } from 'lucide-react'
+import RoleGuard from '@/components/RoleGuard'
 
 export const dynamic = 'force-dynamic'
 
-export default function VetDashboardPage() {
+function VetDashboardContent() {
   const { user, userRole, signOut } = useAuth()
   const { theme } = useTheme()
   const router = useRouter()
@@ -147,5 +148,13 @@ export default function VetDashboardPage() {
         </button>
       </div>
     </div>
+  )
+}
+
+export default function VetDashboardPage() {
+  return (
+    <RoleGuard allowedRoles={['vet', 'clinic_admin', 'admin']}>
+      <VetDashboardContent />
+    </RoleGuard>
   )
 }

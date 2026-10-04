@@ -5,10 +5,11 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
 import { ArrowLeft, Syringe, Check } from 'lucide-react'
+import RoleGuard from '@/components/RoleGuard'
 
 export const dynamic = 'force-dynamic'
 
-export default function VaccinatePage() {
+function VaccinateContent() {
   const { user } = useAuth()
   const { theme } = useTheme()
   const router = useRouter()
@@ -182,5 +183,13 @@ export default function VaccinatePage() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function VaccinatePage() {
+  return (
+    <RoleGuard allowedRoles={['vet', 'clinic_admin', 'admin']}>
+      <VaccinateContent />
+    </RoleGuard>
   )
 }

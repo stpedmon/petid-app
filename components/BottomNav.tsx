@@ -1,9 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Home, PawPrint, Heart, MoreHorizontal, X, Settings, HelpCircle, Shield, QrCode } from 'lucide-react'
+import { Home, PawPrint, Heart, MoreHorizontal, X, Settings, HelpCircle, Shield, QrCode, Crown, Stethoscope } from 'lucide-react'
 import { useTheme } from '@/lib/ThemeContext'
+import { useAuth } from '@/lib/AuthContext'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const mainNavItems = [
@@ -12,17 +13,11 @@ const mainNavItems = [
   { href: '/vaccines', icon: Heart, label: 'Salud' },
 ]
 
-const moreMenuItems = [
-  { href: '/settings', icon: Settings, label: 'Configuración', color: '#FF6B6B' },
-  { href: '/vet', icon: Shield, label: 'Panel Vet', color: '#2E9D68' },
-  { href: '#', icon: QrCode, label: 'Escanear QR', color: '#4D91C6' },
-  { href: '#', icon: HelpCircle, label: 'Ayuda', color: '#F0A62B' },
-]
-
 export default function BottomNav() {
   const pathname = usePathname()
   const router = useRouter()
   const { theme } = useTheme()
+  const { userRole } = useAuth()
   const [showMore, setShowMore] = useState(false)
 
   const isActive = (href: string) => {
@@ -32,7 +27,25 @@ export default function BottomNav() {
     return false
   }
 
-  const isMoreActive = pathname.startsWith('/settings')
+  const isMoreActive = pathname.startsWith('/settings') || pathname.startsWith('/admin')
+
+  const moreMenuItems = useMemo(() => {
+    const items: { href: string; icon: any; label: string; color: string }[] = [
+      { href: '/settings', icon: Settings, label: 'Configuración', color: '#6B7280' },
+      { href: '#', icon: QrCode, label: 'Escanear QR', color: '#4D91C6' },
+      { href: '#', icon: HelpCircle, label: 'Ayuda', color: '#F0A62B' },
+    ]
+
+    if (userRole === 'vet' || userRole === 'clinic_admin' || userRole === 'admin') {
+      items.unshift({ href: '/vet/dashboard', icon: Stethoscope, label: 'Panel Vet', color: '#2E9D68' })
+    }
+
+    if (userRole === 'admin') {
+      items.unshift({ href: '/admin', icon: Crown, label: 'Panel Admin', color: '#D94B5B' })
+    }
+
+    return items
+  }, [userRole])
 
   return (
     <>
