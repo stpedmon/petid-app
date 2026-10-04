@@ -6,17 +6,19 @@ import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
 import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
-import { Syringe, Calendar, CheckCircle2, AlertCircle, PawPrint } from 'lucide-react'
+import { Syringe, Calendar, CheckCircle2, AlertCircle, PawPrint, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export const dynamic = 'force-dynamic'
 
 interface VaxRecord {
   id: string
-  applied_date: string
+  date_administered: string
   next_dose_date: string | null
-  veterinarian_name: string | null
+  administered_by: string | null
   certificate_number: string | null
+  is_verified: boolean
+  added_by_user_id: string | null
   pet: { id: string; name: string; photo_url: string | null }
   vaccine: { name: string }
 }
@@ -49,7 +51,7 @@ export default function VaccinesPage() {
         .from('petid_vaccination_records')
         .select('*, pet:pet_id(id, name, photo_url), vaccine:vaccine_id(name)')
         .in('pet_id', petIds)
-        .order('applied_date', { ascending: false })
+        .order('date_administered', { ascending: false })
       if (data) setRecords(data as any)
     }
     setLoading(false)
@@ -86,7 +88,7 @@ export default function VaccinesPage() {
 
   return (
     <div className="min-h-screen pb-24" style={{ background: theme.bg }}>
-      <TopBar title="Vacunas" />
+      <TopBar compact />
 
       <div className="px-5 py-4">
         <h2 className="text-xl font-bold mb-1" style={{ color: theme.text }}>
@@ -146,7 +148,7 @@ export default function VaccinesPage() {
               Sin vacunas registradas
             </p>
             <p className="text-sm" style={{ color: theme.textMuted }}>
-              Tu veterinaria registrará las vacunas de tus mascotas aquí
+              Agrega vacunas desde el perfil de tu mascota
             </p>
           </div>
         ) : (
@@ -178,12 +180,20 @@ export default function VaccinesPage() {
                       <p className="font-semibold text-sm" style={{ color: theme.text }}>
                         {(r.vaccine as any)?.name || 'Vacuna'}
                       </p>
-                      {r.certificate_number && (
-                        <CheckCircle2 size={16} color="#2E9D68" />
+                      {r.is_verified ? (
+                        <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                          style={{ background: '#2E9D6815', color: '#2E9D68' }}>
+                          <ShieldCheck size={12} /> Verificada
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                          style={{ background: '#D94B5B15', color: '#D94B5B' }}>
+                          <ShieldAlert size={12} /> No verificada
+                        </span>
                       )}
                     </div>
                     <p className="text-xs" style={{ color: theme.textMuted }}>
-                      {(r.pet as any)?.name} • Aplicada: {new Date(r.applied_date).toLocaleDateString('es')}
+                      {(r.pet as any)?.name} • Aplicada: {new Date(r.date_administered).toLocaleDateString('es')}
                     </p>
                     {r.next_dose_date && (
                       <p className="text-xs mt-1" style={{

@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/AuthContext'
 import { LogOut, Bell } from 'lucide-react'
 import { motion } from 'framer-motion'
 
-export default function TopBar({ title }: { title?: string }) {
+export default function TopBar({ title, compact }: { title?: string; compact?: boolean }) {
   const { theme } = useTheme()
   const { signOut } = useAuth()
 
@@ -32,6 +32,7 @@ export default function TopBar({ title }: { title?: string }) {
               height={38}
               className="rounded-lg"
             />
+            {!compact && (
             <div>
               <h1 className="font-extrabold text-[15px] leading-tight tracking-tight" style={{ color: theme.text }}>
                 {title || (
@@ -45,6 +46,7 @@ export default function TopBar({ title }: { title?: string }) {
                 Siempre Contigo
               </p>
             </div>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5">

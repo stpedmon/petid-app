@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useTheme } from '@/lib/ThemeContext'
 import BottomNav from '@/components/BottomNav'
-import { ArrowLeft, Syringe, FileText, Share2, QrCode, Camera, Plus, Save, X, Pencil, Trash2, Download, Clock, ChevronRight, Weight, Calendar, Dna, PawPrint, Compass, MapPin } from 'lucide-react'
+import { ArrowLeft, Syringe, FileText, Share2, QrCode, Camera, Plus, Save, X, Pencil, Trash2, Download, Clock, ChevronRight, Weight, Calendar, Dna, PawPrint, Compass, MapPin, ShieldCheck, ShieldAlert, Pill } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import QRCode from 'react-qr-code'
 import { toPng } from 'html-to-image'
@@ -18,14 +18,35 @@ interface Pet {
 }
 
 interface VaxRecord {
-  id: string; applied_date: string; next_dose_date: string | null;
-  veterinarian_name: string | null; certificate_number: string | null;
+  id: string; date_administered: string; next_dose_date: string | null;
+  administered_by: string | null; certificate_number: string | null;
+  is_verified: boolean; added_by_user_id: string | null;
   vaccine: { name: string };
+}
+
+interface MedicationRecord {
+  id: string; name: string; type: string; applied_date: string;
+  duration_days: number | null; next_dose_date: string | null;
+  notes: string | null; created_at: string;
+}
+
+interface VaccineCatalogItem {
+  id: string; name: string; default_interval_days: number | null;
 }
 
 interface AdventurePhoto {
   id: string; photo_url: string; caption: string | null; created_at: string;
 }
+
+const medicationPresets = [
+  { name: 'Bravecto', duration: 90, type: 'antiparasitario' },
+  { name: 'NexGard', duration: 30, type: 'antiparasitario' },
+  { name: 'Simparica', duration: 35, type: 'antiparasitario' },
+  { name: 'Frontline', duration: 30, type: 'antiparasitario' },
+  { name: 'Revolution', duration: 30, type: 'antiparasitario' },
+  { name: 'Heartgard', duration: 30, type: 'antiparasitario' },
+  { name: 'Seresto (collar)', duration: 240, type: 'antiparasitario' },
+]
 
 function compressImage(file: File, maxWidth = 800, quality = 0.7): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -56,6 +77,8 @@ export default function PetProfilePage() {
   const petId = params.id as string
   const [pet, setPet] = useState<Pet | null>(null)
   const [vaxRecords, setVaxRecords] = useState<VaxRecord[]>([])
+  const [medications, setMedications] = useState<MedicationRecord[]>([])
+  const [vaccineCatalog, setVaccineCatalog] = useState<VaccineCatalogItem[]>([])
   const [adventurePhotos, setAdventurePhotos] = useState<AdventurePhoto[]>([])
   const [tab, setTab] = useState<'vaccines' | 'history' | 'profile' | 'qr'>('profile')
   const [loading, setLoading] = useState(true)
@@ -70,6 +93,20 @@ export default function PetProfilePage() {
   const [viewingPhoto, setViewingPhoto] = useState<AdventurePhoto | null>(null)
   const [ownerSex, setOwnerSex] = useState<string | null>(null)
 
+  // Vaccine & medication form states
+  const [showAddVax, setShowAddVax] = useState(false)
+  const [showAddMed, setShowAddMed] = useState(false)
+  const [vaxFormVaccineId, setVaxFormVaccineId] = useState('')
+  const [vaxFormDate, setVaxFormDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [vaxFormNotes, setVaxFormNotes] = useState('')
+  const [vaxSubmitting, setVaxSubmitting] = useState(false)
+  const [medFormPreset, setMedFormPreset] = useState('')
+  const [medFormCustomName, setMedFormCustomName] = useState('')
+  const [medFormDate, setMedFormDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [medFormDuration, setMedFormDuration] = useState<number | ''>('')
+  const [medFormNotes, setMedFormNotes] = useState('')
+  const [medSubmitting, setMedSubmitting] = useState(false)
+
   const profilePhotoRef = useRef<HTMLInputElement>(null)
   const adventurePhotoRef = useRef<HTMLInputElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
@@ -77,6 +114,12 @@ export default function PetProfilePage() {
 
   useEffect(() => { fetchPet() }, [petId])
   useEffect(() => { if (tab === 'history') fetchAdventurePhotos() }, [tab])
+  useEffect(() => {
+    if (tab === 'vaccines') {
+      fetchMedications()
+      fetchVaccineCatalog()
+    }
+  }, [tab])
 
   const fetchPet = async () => {
     const { data } = await supabase.from('petid_pets').select('*').eq('id', petId).single()
@@ -85,7 +128,7 @@ export default function PetProfilePage() {
       .from('petid_vaccination_records')
       .select('*, vaccine:vaccine_id(name)')
       .eq('pet_id', petId)
-      .order('applied_date', { ascending: false })
+      .order('date_administered', { ascending: false })
     if (vax) setVaxRecords(vax as any)
     // Fetch owner sex
     const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -96,9 +139,108 @@ export default function PetProfilePage() {
     setLoading(false)
   }
 
+  const fetchMedications = async () => {
+    const { data } = await supabase
+      .from('petid_pet_medications')
+      .select('*')
+      .eq('pet_id', petId)
+      .order('applied_date', { ascending: false })
+    if (data) setMedications(data)
+  }
+
+  const fetchVaccineCatalog = async () => {
+    const { data } = await supabase.from('petid_vaccines').select('id, name, default_interval_days').order('name')
+    if (data) setVaccineCatalog(data)
+  }
+
   const fetchAdventurePhotos = async () => {
     const { data } = await supabase.from('petid_pet_photos').select('*').eq('pet_id', petId).order('created_at', { ascending: false })
     if (data) setAdventurePhotos(data)
+  }
+
+  const submitVaccine = async () => {
+    if (!vaxFormVaccineId || !vaxFormDate) return
+    setVaxSubmitting(true)
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      const selectedVaccine = vaccineCatalog.find(v => v.id === vaxFormVaccineId)
+      let nextDose: string | null = null
+      if (selectedVaccine?.default_interval_days) {
+        const d = new Date(vaxFormDate)
+        d.setDate(d.getDate() + selectedVaccine.default_interval_days)
+        nextDose = d.toISOString().split('T')[0]
+      }
+      const { error } = await supabase.from('petid_vaccination_records').insert({
+        pet_id: petId,
+        vaccine_id: vaxFormVaccineId,
+        date_administered: vaxFormDate,
+        next_dose_date: nextDose,
+        notes: vaxFormNotes.trim() || null,
+        added_by_user_id: authUser?.id || null,
+        is_verified: false,
+      })
+      if (error) throw error
+      // Refresh and reset
+      const { data: vax } = await supabase
+        .from('petid_vaccination_records')
+        .select('*, vaccine:vaccine_id(name)')
+        .eq('pet_id', petId)
+        .order('date_administered', { ascending: false })
+      if (vax) setVaxRecords(vax as any)
+      setShowAddVax(false)
+      setVaxFormVaccineId('')
+      setVaxFormDate(new Date().toISOString().split('T')[0])
+      setVaxFormNotes('')
+    } catch (err: any) {
+      alert(err.message || 'Error al agregar vacuna')
+    } finally {
+      setVaxSubmitting(false)
+    }
+  }
+
+  const submitMedication = async () => {
+    const name = medFormPreset || medFormCustomName.trim()
+    if (!name || !medFormDate) return
+    setMedSubmitting(true)
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      const duration = medFormDuration || null
+      let nextDose: string | null = null
+      if (duration && duration > 0) {
+        const d = new Date(medFormDate)
+        d.setDate(d.getDate() + duration)
+        nextDose = d.toISOString().split('T')[0]
+      }
+      const preset = medicationPresets.find(p => p.name === medFormPreset)
+      const { error } = await supabase.from('petid_pet_medications').insert({
+        pet_id: petId,
+        name,
+        type: preset?.type || 'otro',
+        applied_date: medFormDate,
+        duration_days: duration,
+        next_dose_date: nextDose,
+        notes: medFormNotes.trim() || null,
+        added_by_user_id: authUser?.id || null,
+      })
+      if (error) throw error
+      await fetchMedications()
+      setShowAddMed(false)
+      setMedFormPreset('')
+      setMedFormCustomName('')
+      setMedFormDate(new Date().toISOString().split('T')[0])
+      setMedFormDuration('')
+      setMedFormNotes('')
+    } catch (err: any) {
+      alert(err.message || 'Error al agregar medicamento')
+    } finally {
+      setMedSubmitting(false)
+    }
+  }
+
+  const getDaysUntil = (date: string | null) => {
+    if (!date) return null
+    const diff = new Date(date).getTime() - Date.now()
+    return Math.ceil(diff / (1000 * 60 * 60 * 24))
   }
 
   const startEdit = () => {
@@ -222,7 +364,7 @@ export default function PetProfilePage() {
   const age = getAge(pet.date_of_birth)
 
   const tabs = [
-    { key: 'vaccines' as const, label: 'Vacunas', icon: Syringe },
+    { key: 'vaccines' as const, label: 'Salud', icon: Syringe },
     { key: 'history' as const, label: 'Aventuras', icon: Compass },
     { key: 'profile' as const, label: 'Perfil', icon: FileText },
     { key: 'qr' as const, label: 'QR', icon: QrCode },
@@ -387,10 +529,185 @@ export default function PetProfilePage() {
 
       {/* Tab content */}
       <div className="px-5 py-4">
-        {/* Vaccines tab */}
+        {/* ===== SALUD (Vaccines + Medications) tab ===== */}
         {tab === 'vaccines' && (
           <div className="space-y-3">
-            {/* Next vaccine card */}
+            {/* Action buttons */}
+            <div className="flex gap-2">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => { setShowAddVax(!showAddVax); setShowAddMed(false) }}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold"
+                style={{ background: showAddVax ? theme.primary : theme.primaryLight, color: showAddVax ? '#fff' : theme.primary }}
+              >
+                {showAddVax ? <X size={14} /> : <Plus size={14} />}
+                Vacuna
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => { setShowAddMed(!showAddMed); setShowAddVax(false) }}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold"
+                style={{ background: showAddMed ? '#4D91C6' : '#4D91C615', color: showAddMed ? '#fff' : '#4D91C6' }}
+              >
+                {showAddMed ? <X size={14} /> : <Plus size={14} />}
+                Medicamento
+              </motion.button>
+            </div>
+
+            {/* Add vaccine form */}
+            <AnimatePresence>
+              {showAddVax && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <div className="rounded-2xl p-4 space-y-3" style={{ background: theme.bgCard, border: `1px solid ${theme.primary}30` }}>
+                    <p className="text-sm font-bold" style={{ color: theme.text }}>Agregar vacuna</p>
+                    <select
+                      value={vaxFormVaccineId}
+                      onChange={e => setVaxFormVaccineId(e.target.value)}
+                      className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl appearance-none"
+                      style={{ color: vaxFormVaccineId ? theme.text : theme.textMuted, border: `1px solid ${theme.border}`, background: theme.bg }}
+                    >
+                      <option value="">Seleccionar vacuna...</option>
+                      {vaccineCatalog.map(v => (
+                        <option key={v.id} value={v.id}>{v.name}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="date"
+                      value={vaxFormDate}
+                      onChange={e => setVaxFormDate(e.target.value)}
+                      className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
+                      style={{ color: theme.text, border: `1px solid ${theme.border}`, background: theme.bg }}
+                    />
+                    <input
+                      type="text"
+                      value={vaxFormNotes}
+                      onChange={e => setVaxFormNotes(e.target.value)}
+                      placeholder="Notas (opcional)"
+                      className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
+                      style={{ color: theme.text, border: `1px solid ${theme.border}`, background: theme.bg }}
+                    />
+                    <div className="flex items-center gap-2 text-xs" style={{ color: theme.textMuted }}>
+                      <ShieldAlert size={14} color="#D94B5B" />
+                      <span>Se mostrará como &quot;No verificada&quot; hasta que tu veterinario la confirme</span>
+                    </div>
+                    <motion.button
+                      whileTap={{ scale: 0.97 }}
+                      onClick={submitVaccine}
+                      disabled={!vaxFormVaccineId || vaxSubmitting}
+                      className="w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50"
+                      style={{ background: theme.primary, color: '#fff' }}
+                    >
+                      {vaxSubmitting ? 'Guardando...' : 'Agregar vacuna'}
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Add medication form */}
+            <AnimatePresence>
+              {showAddMed && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <div className="rounded-2xl p-4 space-y-3" style={{ background: theme.bgCard, border: `1px solid #4D91C630` }}>
+                    <p className="text-sm font-bold" style={{ color: theme.text }}>Agregar medicamento</p>
+                    {/* Preset pills */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {medicationPresets.map(p => (
+                        <button
+                          key={p.name}
+                          onClick={() => {
+                            setMedFormPreset(medFormPreset === p.name ? '' : p.name)
+                            setMedFormCustomName('')
+                            setMedFormDuration(p.duration || '')
+                          }}
+                          className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                          style={{
+                            background: medFormPreset === p.name ? '#4D91C6' : '#4D91C612',
+                            color: medFormPreset === p.name ? '#fff' : '#4D91C6',
+                            border: `1px solid ${medFormPreset === p.name ? '#4D91C6' : '#4D91C630'}`,
+                          }}
+                        >
+                          {p.name} {p.duration > 0 && `(${p.duration}d)`}
+                        </button>
+                      ))}
+                    </div>
+                    {/* Custom name if no preset selected */}
+                    {!medFormPreset && (
+                      <input
+                        type="text"
+                        value={medFormCustomName}
+                        onChange={e => setMedFormCustomName(e.target.value)}
+                        placeholder="Nombre del medicamento"
+                        className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
+                        style={{ color: theme.text, border: `1px solid ${theme.border}`, background: theme.bg }}
+                      />
+                    )}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-medium mb-1 block" style={{ color: theme.textMuted }}>Fecha aplicación</label>
+                        <input
+                          type="date"
+                          value={medFormDate}
+                          onChange={e => setMedFormDate(e.target.value)}
+                          className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
+                          style={{ color: theme.text, border: `1px solid ${theme.border}`, background: theme.bg }}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-medium mb-1 block" style={{ color: theme.textMuted }}>Duración (días)</label>
+                        <input
+                          type="number"
+                          value={medFormDuration}
+                          onChange={e => setMedFormDuration(e.target.value ? parseInt(e.target.value) : '')}
+                          placeholder="Ej: 90"
+                          className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
+                          style={{ color: theme.text, border: `1px solid ${theme.border}`, background: theme.bg }}
+                        />
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      value={medFormNotes}
+                      onChange={e => setMedFormNotes(e.target.value)}
+                      placeholder="Notas (opcional)"
+                      className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
+                      style={{ color: theme.text, border: `1px solid ${theme.border}`, background: theme.bg }}
+                    />
+                    {medFormDuration && medFormDate && (
+                      <div className="flex items-center gap-2 text-xs px-1" style={{ color: '#4D91C6' }}>
+                        <Clock size={14} />
+                        <span>
+                          Próxima dosis: {new Date(new Date(medFormDate).getTime() + Number(medFormDuration) * 86400000).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </span>
+                      </div>
+                    )}
+                    <motion.button
+                      whileTap={{ scale: 0.97 }}
+                      onClick={submitMedication}
+                      disabled={(!medFormPreset && !medFormCustomName.trim()) || medSubmitting}
+                      className="w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50"
+                      style={{ background: '#4D91C6', color: '#fff' }}
+                    >
+                      {medSubmitting ? 'Guardando...' : 'Agregar medicamento'}
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Next vaccine alert */}
             {nextVaccine && (
               <div className="rounded-2xl p-4" style={{ background: `${theme.accent}12`, border: `1px solid ${theme.accent}30` }}>
                 <p className="text-xs font-semibold mb-1" style={{ color: theme.accent }}>Próxima vacuna</p>
@@ -403,12 +720,21 @@ export default function PetProfilePage() {
               </div>
             )}
 
+            {/* === Vaccines section === */}
+            <div className="flex items-center gap-2 pt-1">
+              <Syringe size={15} color={theme.primary} />
+              <h3 className="font-bold text-sm" style={{ color: theme.text }}>Vacunas</h3>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: theme.primaryLight, color: theme.textMuted }}>
+                {vaxRecords.length}
+              </span>
+            </div>
+
             {vaxRecords.length === 0 ? (
-              <div className="rounded-2xl p-8 text-center" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
-                <Syringe size={36} color={theme.textMuted} className="mx-auto mb-3" />
-                <p className="font-semibold" style={{ color: theme.text }}>Sin vacunas registradas</p>
-                <p className="text-sm mt-1" style={{ color: theme.textMuted }}>
-                  Tu veterinaria registrará las vacunas aquí
+              <div className="rounded-2xl p-6 text-center" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
+                <Syringe size={28} color={theme.textMuted} className="mx-auto mb-2" />
+                <p className="font-semibold text-sm" style={{ color: theme.text }}>Sin vacunas registradas</p>
+                <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+                  Agrega vacunas manualmente o tu veterinario las registrará
                 </p>
               </div>
             ) : (
@@ -419,28 +745,90 @@ export default function PetProfilePage() {
                     <p className="font-semibold text-sm" style={{ color: theme.text }}>
                       {(r.vaccine as any)?.name || 'Vacuna'}
                     </p>
-                    {r.certificate_number && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                    {r.is_verified ? (
+                      <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold"
                         style={{ background: '#2E9D6815', color: '#2E9D68' }}>
-                        ✓ Certificada
+                        <ShieldCheck size={12} /> Verificada
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                        style={{ background: '#D94B5B15', color: '#D94B5B' }}>
+                        <ShieldAlert size={12} /> No verificada
                       </span>
                     )}
                   </div>
                   <p className="text-xs" style={{ color: theme.textMuted }}>
-                    Aplicada: {new Date(r.applied_date).toLocaleDateString('es')}
+                    Aplicada: {new Date(r.date_administered).toLocaleDateString('es')}
                   </p>
                   {r.next_dose_date && (
                     <p className="text-xs mt-0.5" style={{ color: theme.accent }}>
                       Próxima: {new Date(r.next_dose_date).toLocaleDateString('es')}
                     </p>
                   )}
-                  {r.veterinarian_name && (
-                    <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>
-                      Dr. {r.veterinarian_name}
-                    </p>
-                  )}
                 </motion.div>
               ))
+            )}
+
+            {/* === Medications section === */}
+            <div className="flex items-center gap-2 pt-3 mt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
+              <Pill size={15} color="#4D91C6" />
+              <h3 className="font-bold text-sm" style={{ color: theme.text }}>Medicamentos</h3>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: '#4D91C612', color: theme.textMuted }}>
+                {medications.length}
+              </span>
+            </div>
+
+            {medications.length === 0 ? (
+              <div className="rounded-2xl p-6 text-center" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
+                <Pill size={28} color={theme.textMuted} className="mx-auto mb-2" />
+                <p className="font-semibold text-sm" style={{ color: theme.text }}>Sin medicamentos registrados</p>
+                <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+                  Registra medicamentos como Bravecto, NexGard, etc.
+                </p>
+              </div>
+            ) : (
+              medications.map((m, i) => {
+                const daysLeft = getDaysUntil(m.next_dose_date)
+                const isOverdue = daysLeft !== null && daysLeft < 0
+                const isSoon = daysLeft !== null && daysLeft >= 0 && daysLeft <= 7
+                return (
+                  <motion.div key={m.id} initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.05 }}
+                    className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="font-semibold text-sm" style={{ color: theme.text }}>{m.name}</p>
+                      {m.duration_days && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                          style={{ background: '#4D91C612', color: '#4D91C6' }}>
+                          {m.duration_days} días
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs" style={{ color: theme.textMuted }}>
+                      Aplicado: {new Date(m.applied_date).toLocaleDateString('es')}
+                    </p>
+                    {m.next_dose_date && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <Clock size={12} color={isOverdue ? '#D94B5B' : isSoon ? '#F0A62B' : '#2E9D68'} />
+                        <p className="text-xs font-semibold" style={{
+                          color: isOverdue ? '#D94B5B' : isSoon ? '#F0A62B' : '#2E9D68'
+                        }}>
+                          {isOverdue
+                            ? `Vencido hace ${Math.abs(daysLeft!)} días`
+                            : daysLeft === 0
+                              ? 'Hoy toca la próxima dosis'
+                              : `Próxima dosis en ${daysLeft} día${daysLeft !== 1 ? 's' : ''}`
+                          }
+                          {' · '}
+                          {new Date(m.next_dose_date).toLocaleDateString('es', { day: 'numeric', month: 'short' })}
+                        </p>
+                      </div>
+                    )}
+                    {m.notes && (
+                      <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{m.notes}</p>
+                    )}
+                  </motion.div>
+                )
+              })
             )}
           </div>
         )}
