@@ -28,6 +28,7 @@ export default function LoginPage() {
   const [isRegister, setIsRegister] = useState(false)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  const [sex, setSex] = useState<'male' | 'female'>('male')
   const [showPass, setShowPass] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -53,6 +54,7 @@ export default function LoginPage() {
             full_name: name,
             email,
             phone,
+            sex,
             role: 'owner'
           })
         }
@@ -235,6 +237,27 @@ export default function LoginPage() {
                           color: '#1F1F1F',
                         }}
                       />
+                    </div>
+                    {/* Sex selector */}
+                    <div className="flex gap-2">
+                      {[
+                        { value: 'male' as const, label: 'Papá 🐾', emoji: '👨' },
+                        { value: 'female' as const, label: 'Mamá 🐾', emoji: '👩' },
+                      ].map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setSex(opt.value)}
+                          className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all"
+                          style={{
+                            background: sex === opt.value ? '#FF6B6B' : '#FFF7E9',
+                            color: sex === opt.value ? '#FFFFFF' : '#6B6B6B',
+                            border: `1px solid ${sex === opt.value ? '#FF6B6B' : '#E8E0D4'}`,
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
                     </div>
                   </motion.div>
                 )}

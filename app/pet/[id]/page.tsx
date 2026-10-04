@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useTheme } from '@/lib/ThemeContext'
 import BottomNav from '@/components/BottomNav'
-import { ArrowLeft, Syringe, FileText, Share2, QrCode, Camera, Plus, Save, X, Pencil, Trash2, Download, Clock, ChevronRight, Weight, Calendar, Dna, PawPrint } from 'lucide-react'
+import { ArrowLeft, Syringe, FileText, Share2, QrCode, Camera, Plus, Save, X, Pencil, Trash2, Download, Clock, ChevronRight, Weight, Calendar, Dna, PawPrint, Compass, MapPin } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import QRCode from 'react-qr-code'
 import { toPng } from 'html-to-image'
@@ -68,6 +68,7 @@ export default function PetProfilePage() {
   const [showCaptionInput, setShowCaptionInput] = useState(false)
   const [pendingAdventureFile, setPendingAdventureFile] = useState<File | null>(null)
   const [viewingPhoto, setViewingPhoto] = useState<AdventurePhoto | null>(null)
+  const [ownerSex, setOwnerSex] = useState<string | null>(null)
 
   const profilePhotoRef = useRef<HTMLInputElement>(null)
   const adventurePhotoRef = useRef<HTMLInputElement>(null)
@@ -86,6 +87,12 @@ export default function PetProfilePage() {
       .eq('pet_id', petId)
       .order('applied_date', { ascending: false })
     if (vax) setVaxRecords(vax as any)
+    // Fetch owner sex
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (authUser) {
+      const { data: ownerData } = await supabase.from('petid_users').select('sex').eq('id', authUser.id).single()
+      if (ownerData) setOwnerSex(ownerData.sex)
+    }
     setLoading(false)
   }
 
@@ -216,7 +223,7 @@ export default function PetProfilePage() {
 
   const tabs = [
     { key: 'vaccines' as const, label: 'Vacunas', icon: Syringe },
-    { key: 'history' as const, label: 'Historial', icon: Clock },
+    { key: 'history' as const, label: 'Aventuras', icon: Compass },
     { key: 'profile' as const, label: 'Perfil', icon: FileText },
     { key: 'qr' as const, label: 'QR', icon: QrCode },
   ]
@@ -438,90 +445,174 @@ export default function PetProfilePage() {
           </div>
         )}
 
-        {/* History tab — photos + visit history */}
+        {/* Adventures tab — Instagram-style posts */}
         {tab === 'history' && (
           <div className="space-y-4">
-            {/* Last vet visit */}
-            {vaxRecords.length > 0 && (
-              <div className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
-                <p className="text-xs font-semibold mb-1" style={{ color: theme.textMuted }}>Última visita veterinaria</p>
-                <p className="font-bold text-sm" style={{ color: theme.text }}>
-                  {new Date(vaxRecords[0].applied_date).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}
-                </p>
-                {vaxRecords[0].veterinarian_name && (
-                  <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Dr. {vaxRecords[0].veterinarian_name}</p>
-                )}
-              </div>
+            {/* Add adventure button */}
+            {adventurePhotos.length < 30 && (
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => adventurePhotoRef.current?.click()}
+                disabled={uploadingAdventure}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold disabled:opacity-50"
+                style={{ background: theme.primary, color: '#fff', boxShadow: '0 4px 14px rgba(255,107,107,0.25)' }}
+              >
+                <Camera size={16} />
+                Agregar aventura
+                <span className="text-xs opacity-70">({adventurePhotos.length}/30)</span>
+              </motion.button>
             )}
 
-            {/* Adventure photos section */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <p className="font-bold text-sm" style={{ color: theme.text }}>Fotos</p>
-                <button onClick={() => adventurePhotoRef.current?.click()} disabled={uploadingAdventure}
-                  className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full"
-                  style={{ background: theme.primaryLight, color: theme.primary }}>
-                  <Camera size={12} /> Agregar
-                </button>
-              </div>
+            {/* Caption input for new post */}
+            <AnimatePresence>
+              {showCaptionInput && (
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                  className="rounded-2xl overflow-hidden" style={{ background: theme.bgCard, border: `1px solid ${theme.primary}30` }}>
+                  {pendingAdventureFile && (
+                    <div className="w-full aspect-[4/3] overflow-hidden">
+                      <img src={URL.createObjectURL(pendingAdventureFile)} alt="Preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="p-4 space-y-3">
+                    <input type="text" value={adventureCaption} onChange={e => setAdventureCaption(e.target.value)}
+                      placeholder={`¿Qué hacía ${pet.name}?`}
+                      className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
+                      style={{ color: theme.text, border: `1px solid ${theme.border}` }} />
+                    <div className="flex gap-2">
+                      <button onClick={() => { setShowCaptionInput(false); setPendingAdventureFile(null); setAdventureCaption('') }}
+                        className="flex-1 py-2.5 rounded-xl text-sm font-medium"
+                        style={{ background: theme.primaryLight, color: theme.textMuted }}>
+                        Cancelar
+                      </button>
+                      <button onClick={uploadAdventurePhoto} disabled={uploadingAdventure}
+                        className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50"
+                        style={{ background: theme.primary, color: '#fff' }}>
+                        {uploadingAdventure ? 'Subiendo...' : 'Publicar'}
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-              {/* Caption input */}
-              <AnimatePresence>
-                {showCaptionInput && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                    className="overflow-hidden mb-3">
-                    <div className="rounded-2xl p-4 space-y-3" style={{ background: theme.bgCard, border: `1px solid ${theme.primary}30` }}>
-                      {pendingAdventureFile && (
-                        <div className="w-full h-40 rounded-xl overflow-hidden">
-                          <img src={URL.createObjectURL(pendingAdventureFile)} alt="Preview" className="w-full h-full object-cover" />
+            {/* Empty state */}
+            {adventurePhotos.length === 0 && !showCaptionInput ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl p-8 text-center"
+                style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
+              >
+                <motion.div
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  className="mb-4"
+                >
+                  <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center"
+                    style={{ background: theme.primaryLight }}>
+                    <Compass size={32} color={theme.primary} strokeWidth={1.5} />
+                  </div>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <p className="font-bold text-base mb-1" style={{ color: theme.text }}>
+                    {pet.name} quiere aventuras
+                  </p>
+                  <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>
+                    {ownerSex === 'female' ? 'Mamá' : 'Papá'}, agrega un recuerdo de nuestras aventuras juntos
+                  </p>
+                </motion.div>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => adventurePhotoRef.current?.click()}
+                  className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold"
+                  style={{ background: theme.primary, color: '#fff' }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <Camera size={16} />
+                  Primera aventura
+                </motion.button>
+              </motion.div>
+            ) : (
+              /* Instagram-style post feed */
+              <div className="space-y-4">
+                {adventurePhotos.map((photo, i) => (
+                  <motion.div
+                    key={photo.id}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.08 }}
+                    className="rounded-2xl overflow-hidden"
+                    style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
+                  >
+                    {/* Post header — pet avatar + date */}
+                    <div className="flex items-center justify-between px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0"
+                          style={{ background: theme.primaryLight }}>
+                          {pet.photo_url ? (
+                            <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <PawPrint size={14} color={theme.primary} />
+                            </div>
+                          )}
                         </div>
-                      )}
-                      <input type="text" value={adventureCaption} onChange={e => setAdventureCaption(e.target.value)}
-                        placeholder="Describe esta aventura... (opcional)"
-                        className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
-                        style={{ color: theme.text, border: `1px solid ${theme.border}` }} />
-                      <div className="flex gap-2">
-                        <button onClick={() => { setShowCaptionInput(false); setPendingAdventureFile(null); setAdventureCaption('') }}
-                          className="flex-1 py-2.5 rounded-xl text-sm font-medium"
-                          style={{ background: theme.primaryLight, color: theme.textMuted }}>
-                          Cancelar
-                        </button>
-                        <button onClick={uploadAdventurePhoto} disabled={uploadingAdventure}
-                          className="flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50"
-                          style={{ background: theme.primary, color: '#fff' }}>
-                          {uploadingAdventure ? 'Subiendo...' : 'Publicar'}
-                        </button>
+                        <div>
+                          <p className="text-xs font-bold leading-tight" style={{ color: theme.text }}>{pet.name}</p>
+                          <p className="text-[10px]" style={{ color: theme.textMuted }}>
+                            {new Date(photo.created_at).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          </p>
+                        </div>
                       </div>
+                      <button
+                        onClick={() => setViewingPhoto(photo)}
+                        className="w-7 h-7 rounded-full flex items-center justify-center"
+                        style={{ background: theme.primaryLight }}
+                      >
+                        <MapPin size={12} color={theme.primary} />
+                      </button>
+                    </div>
+
+                    {/* Post image — full width */}
+                    <button onClick={() => setViewingPhoto(photo)} className="w-full">
+                      <img src={photo.photo_url} alt={photo.caption || ''} className="w-full aspect-[4/3] object-cover" />
+                    </button>
+
+                    {/* Post caption */}
+                    {photo.caption && (
+                      <div className="px-4 py-3">
+                        <p className="text-sm" style={{ color: theme.text }}>
+                          <span className="font-bold mr-1.5">{pet.name}</span>
+                          {photo.caption}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Post footer — time ago */}
+                    <div className="px-4 pb-3">
+                      <p className="text-[10px] uppercase tracking-wider" style={{ color: theme.textMuted }}>
+                        {(() => {
+                          const diff = Date.now() - new Date(photo.created_at).getTime()
+                          const mins = Math.floor(diff / 60000)
+                          if (mins < 60) return `hace ${mins}m`
+                          const hrs = Math.floor(mins / 60)
+                          if (hrs < 24) return `hace ${hrs}h`
+                          const days = Math.floor(hrs / 24)
+                          if (days < 30) return `hace ${days}d`
+                          return new Date(photo.created_at).toLocaleDateString('es', { day: 'numeric', month: 'short' })
+                        })()}
+                      </p>
                     </div>
                   </motion.div>
-                )}
-              </AnimatePresence>
-
-              {adventurePhotos.length === 0 ? (
-                <div className="rounded-2xl p-6 text-center" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
-                  <Camera size={28} color={theme.textMuted} className="mx-auto mb-2" />
-                  <p className="text-sm font-medium" style={{ color: theme.text }}>Sin fotos</p>
-                  <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
-                    Comparte los mejores momentos de {pet.name}
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-3 gap-1.5">
-                  {adventurePhotos.map((photo, i) => (
-                    <motion.button key={photo.id} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.05 }} onClick={() => setViewingPhoto(photo)}
-                      className="aspect-square rounded-xl overflow-hidden relative group">
-                      <img src={photo.photo_url} alt={photo.caption || ''} className="w-full h-full object-cover" />
-                      {photo.caption && (
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <p className="text-white text-[10px] truncate">{photo.caption}</p>
-                        </div>
-                      )}
-                    </motion.button>
-                  ))}
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
