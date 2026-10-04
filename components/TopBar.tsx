@@ -1,7 +1,8 @@
 'use client'
+import Image from 'next/image'
 import { useTheme } from '@/lib/ThemeContext'
 import { useAuth } from '@/lib/AuthContext'
-import { LogOut, Bell, PawPrint } from 'lucide-react'
+import { LogOut, Bell } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export default function TopBar({ title }: { title?: string }) {
@@ -23,8 +24,8 @@ export default function TopBar({ title }: { title?: string }) {
           }}
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-              <PawPrint size={20} color="#fff" />
+            <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center p-1.5">
+              <Image src="/petid-icon.svg" alt="PetID" width={24} height={24} className="brightness-0 invert" />
             </div>
             <div>
               <h1 className="text-white font-bold text-base leading-tight tracking-tight">

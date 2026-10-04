@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">PetID icon</title>
+  <desc id="desc">Minimal pet identity tag with a dog profile and QR accent</desc>
+  <rect width="256" height="256" rx="56" fill="#FFF7E9"/>
+  <path d="M79 33h98c20 0 36 16 36 36v118c0 20-16 36-36 36H79c-20 0-36-16-36-36V69c0-20 16-36 36-36Z" fill="#1F1F1F"/>
+  <circle cx="128" cy="33" r="16" fill="#FFF7E9"/>
+  <circle cx="128" cy="33" r="7" fill="#1F1F1F"/>
+  <path d="M77 128c0-30 20-53 47-53 16 0 28 7 37 18 7 8 10 18 10 30 0 22-13 40-34 48l-2 22c0 7-5 12-12 12h-10c-7 0-12-5-12-12v-15c-14-9-24-28-24-50Z" fill="#FFF7E9"/>
+  <path d="M104 104c-8 8-13 18-13 29 0 17 10 30 23 37l5 3v11h6l3-29c18-4 28-18 28-34 0-7-2-14-6-19-7-9-17-14-28-14-7 0-13 2-18 5Z" fill="#FF6B6B"/>
+  <circle cx="116" cy="131" r="5" fill="#1F1F1F"/>
+  <path d="M94 111c-7-6-14-10-21-10l9 22Z" fill="#FFC857"/>
+  <path d="M137 112c5-6 11-10 18-11l-7 22Z" fill="#BEE3F8"/>
+  <rect x="163" y="146" width="42" height="42" rx="7" fill="#FFFFFF"/>
+  <rect x="169" y="152" width="12" height="12" fill="#1F1F1F"/>
+  <rect x="187" y="152" width="12" height="12" fill="#1F1F1F"/>
+  <rect x="169" y="170" width="12" height="12" fill="#1F1F1F"/>
+  <rect x="187" y="173" width="7" height="7" fill="#FF6B6B"/>
+  <rect x="197" y="169" width="5" height="5" fill="#1F1F1F"/>
+</svg>

@@ -9,13 +9,13 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: themes.forest,
-  themeId: 'forest',
+  theme: themes.petid,
+  themeId: 'petid',
   setThemeId: () => {}
 })
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [themeId, setThemeId] = useState<ThemeId>('forest')
+  const [themeId, setThemeId] = useState<ThemeId>('petid')
 
   useEffect(() => {
     const saved = localStorage.getItem('petid-theme') as ThemeId

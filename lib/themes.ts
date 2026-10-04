@@ -1,4 +1,4 @@
-export type ThemeId = 'forest' | 'ocean' | 'sunset' | 'lavender' | 'midnight' | 'rose' | 'coffee' | 'arctic' | 'mint'
+export type ThemeId = 'petid' | 'forest' | 'ocean' | 'sunset' | 'lavender' | 'midnight' | 'rose' | 'coffee' | 'arctic' | 'mint'
 
 export interface Theme {
   id: ThemeId
@@ -15,6 +15,12 @@ export interface Theme {
 }
 
 export const themes: Record<ThemeId, Theme> = {
+  petid: {
+    id: 'petid', name: 'PetID',
+    primary: '#FF6B6B', primaryLight: '#FFF0F0', primaryDark: '#E55A5A',
+    accent: '#FFC857', bg: '#FFF7E9', bgCard: '#FFFFFF',
+    text: '#1F1F1F', textMuted: '#6B6B6B', border: '#E8E0D4'
+  },
   forest: {
     id: 'forest', name: 'Bosque',
     primary: '#1B6B4A', primaryLight: '#e8f5ef', primaryDark: '#145236',
@@ -72,5 +78,5 @@ export const themes: Record<ThemeId, Theme> = {
 }
 
 export function getTheme(id: ThemeId): Theme {
-  return themes[id] || themes.forest
+  return themes[id] || themes.petid
 }

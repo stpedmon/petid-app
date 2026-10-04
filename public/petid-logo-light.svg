@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 180">
+  <g transform="translate(8 8) scale(.64)">
+    <rect width="256" height="256" rx="56" fill="#FFFFFF"/>
+    <path d="M79 33h98c20 0 36 16 36 36v118c0 20-16 36-36 36H79c-20 0-36-16-36-36V69c0-20 16-36 36-36Z" fill="#1F1F1F"/>
+    <circle cx="128" cy="33" r="16" fill="#FFFFFF"/><circle cx="128" cy="33" r="7" fill="#1F1F1F"/>
+    <path d="M77 128c0-30 20-53 47-53 16 0 28 7 37 18 7 8 10 18 10 30 0 22-13 40-34 48l-2 22c0 7-5 12-12 12h-10c-7 0-12-5-12-12v-15c-14-9-24-28-24-50Z" fill="#FFFFFF"/>
+    <path d="M104 104c-8 8-13 18-13 29 0 17 10 30 23 37l5 3v11h6l3-29c18-4 28-18 28-34 0-7-2-14-6-19-7-9-17-14-28-14-7 0-13 2-18 5Z" fill="#FF6B6B"/>
+    <circle cx="116" cy="131" r="5" fill="#1F1F1F"/>
+  </g>
+  <text x="194" y="112" font-family="'Plus Jakarta Sans', Inter, Arial, sans-serif" font-size="82" font-weight="800"><tspan fill="#FFFFFF">Pet</tspan><tspan fill="#FF6B6B">ID</tspan></text>
+</svg>

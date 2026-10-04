@@ -2,9 +2,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { QrCode, Shield, Syringe, Bell, ArrowRight, Sparkles, FileCheck, CheckSquare, Square } from 'lucide-react'
+import { QrCode, Shield, Syringe, Bell, ArrowRight, Sparkles, FileCheck, CheckSquare, Square, Palette, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/AuthContext'
+import { useTheme } from '@/lib/ThemeContext'
+import { themes, ThemeId } from '@/lib/themes'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,8 +16,8 @@ const infoSteps = [
     title: 'Tarjeta Digital Única',
     subtitle: 'Tu mascota, siempre identificada',
     description: 'Cada mascota recibe un código QR exclusivo que cualquiera puede escanear para ver su información y contactarte.',
-    color: '#1B6B4A',
-    gradient: 'linear-gradient(135deg, #1B6B4A, #2ECC71)',
+    color: '#FF6B6B',
+    gradient: 'linear-gradient(135deg, #FF6B6B, #FFC857)',
     features: ['QR único por mascota', 'Perfil público seguro', 'Compatible con wallets'],
   },
   {
@@ -32,8 +34,8 @@ const infoSteps = [
     title: 'Red Veterinaria',
     subtitle: 'Conectado con tu veterinario',
     description: 'Tu veterinario puede actualizar el historial directamente. Sin papeles, sin cartillas que se pierden.',
-    color: '#1565C0',
-    gradient: 'linear-gradient(135deg, #1565C0, #42A5F5)',
+    color: '#4D91C6',
+    gradient: 'linear-gradient(135deg, #4D91C6, #BEE3F8)',
     features: ['Panel veterinario', 'Actualizaciones en tiempo real', 'Historial compartido'],
   },
   {
@@ -41,8 +43,8 @@ const infoSteps = [
     title: 'Mascota Perdida',
     subtitle: 'Tranquilidad para ti',
     description: 'Si alguien encuentra a tu mascota, solo necesita escanear el QR para contactarte al instante.',
-    color: '#7B1FA2',
-    gradient: 'linear-gradient(135deg, #7B1FA2, #CE93D8)',
+    color: '#FFC857',
+    gradient: 'linear-gradient(135deg, #FFC857, #FF6B6B)',
     features: ['Alerta de mascota perdida', 'Contacto directo', 'Geolocalización'],
   },
 ]
@@ -60,17 +62,27 @@ export default function OnboardingPage() {
   const [saving, setSaving] = useState(false)
   const router = useRouter()
   const { user } = useAuth()
+  const { setThemeId } = useTheme()
+  const [selectedTheme, setSelectedTheme] = useState<ThemeId>('petid')
 
-  const totalSteps = infoSteps.length + 1 // info steps + consent step
-  const isConsentStep = step === infoSteps.length
+  const totalSteps = infoSteps.length + 2 // info steps + theme step + consent step
+  const isThemeStep = step === infoSteps.length
+  const isConsentStep = step === infoSteps.length + 1
   const isLast = step === totalSteps - 1
 
-  const consentColor = '#1B6B4A'
-  const consentGradient = 'linear-gradient(135deg, #1B6B4A, #2ECC71)'
+  const consentColor = '#FF6B6B'
+  const consentGradient = 'linear-gradient(135deg, #FF6B6B, #FFC857)'
+
+  const themeStepColor = '#FF6B6B'
+  const themeStepGradient = 'linear-gradient(135deg, #FF6B6B, #FFC857)'
 
   const current = isConsentStep
     ? { color: consentColor, gradient: consentGradient }
+    : isThemeStep
+    ? { color: themeStepColor, gradient: themeStepGradient }
     : infoSteps[step]
+
+  const themeList = Object.values(themes)
 
   const saveConsent = async () => {
     if (!user) return
@@ -94,13 +106,16 @@ export default function OnboardingPage() {
   const next = () => {
     if (isConsentStep) {
       saveConsent()
+    } else if (isThemeStep) {
+      setThemeId(selectedTheme)
+      setStep(s => s + 1)
     } else {
       setStep(s => s + 1)
     }
   }
 
   const skip = () => {
-    // Skip goes to consent step, can't skip consent
+    // Skip goes to theme step, can't skip theme or consent
     setStep(infoSteps.length)
   }
 
@@ -141,7 +156,98 @@ export default function OnboardingPage() {
       {/* Content */}
       <div className="relative z-10 flex-1 flex flex-col justify-center px-6">
         <AnimatePresence mode="wait">
-          {isConsentStep ? (
+          {isThemeStep ? (
+            <motion.div
+              key="theme"
+              initial={{ x: 80, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -80, opacity: 0 }}
+              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            >
+              {/* Theme icon */}
+              <div className="text-center mb-6">
+                <motion.div
+                  initial={{ scale: 0, rotate: -20 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: 'spring', stiffness: 200, delay: 0.15 }}
+                  className="inline-flex items-center justify-center w-24 h-24 rounded-[28px] mb-5"
+                  style={{
+                    background: themeStepGradient,
+                    boxShadow: `0 20px 60px ${themeStepColor}40`,
+                  }}
+                >
+                  <Palette size={42} color="#fff" strokeWidth={1.5} />
+                </motion.div>
+
+                <motion.h2
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-2xl font-bold text-white mb-1 tracking-tight"
+                >
+                  Elige tu Estilo
+                </motion.h2>
+                <motion.p
+                  initial={{ y: 15, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.25 }}
+                  className="text-sm text-white/40"
+                >
+                  Personaliza la apariencia de tu app
+                </motion.p>
+              </div>
+
+              {/* Theme grid */}
+              <motion.div
+                initial={{ y: 15, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="max-w-sm mx-auto"
+              >
+                <div className="grid grid-cols-5 gap-3">
+                  {themeList.map((t, i) => {
+                    const isSelected = selectedTheme === t.id
+                    return (
+                      <motion.button
+                        key={t.id}
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: 0.35 + i * 0.04, type: 'spring', stiffness: 300 }}
+                        onClick={() => setSelectedTheme(t.id)}
+                        className="flex flex-col items-center gap-1.5"
+                      >
+                        <div
+                          className="w-12 h-12 rounded-2xl relative flex items-center justify-center transition-all"
+                          style={{
+                            background: `linear-gradient(135deg, ${t.primary}, ${t.accent})`,
+                            boxShadow: isSelected ? `0 4px 16px ${t.primary}50` : `0 2px 8px ${t.primary}25`,
+                            border: isSelected ? '2.5px solid #fff' : '2.5px solid transparent',
+                            transform: isSelected ? 'scale(1.1)' : 'scale(1)',
+                          }}
+                        >
+                          {isSelected && (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className="w-5 h-5 rounded-full bg-white flex items-center justify-center"
+                            >
+                              <Check size={12} color={t.primary} strokeWidth={3} />
+                            </motion.div>
+                          )}
+                        </div>
+                        <span
+                          className="text-[9px] font-semibold"
+                          style={{ color: isSelected ? '#fff' : 'rgba(255,255,255,0.45)' }}
+                        >
+                          {t.id === 'petid' ? 'Estándar' : t.name}
+                        </span>
+                      </motion.button>
+                    )
+                  })}
+                </div>
+              </motion.div>
+            </motion.div>
+          ) : isConsentStep ? (
             <motion.div
               key="consent"
               initial={{ x: 80, opacity: 0 }}
@@ -338,7 +444,7 @@ export default function OnboardingPage() {
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={next}
-          disabled={isConsentStep && !consentChecked || saving}
+          disabled={(isConsentStep && !consentChecked) || saving}
           className="w-full max-w-md mx-auto flex items-center justify-center gap-2 py-4 rounded-2xl text-white font-bold text-sm transition-opacity"
           style={{
             background: current.gradient,
@@ -355,6 +461,11 @@ export default function OnboardingPage() {
                 Aceptar y Comenzar
               </>
             )
+          ) : isThemeStep ? (
+            <>
+              Confirmar Tema
+              <ArrowRight size={18} />
+            </>
           ) : (
             <>
               Siguiente
