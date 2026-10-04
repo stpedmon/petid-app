@@ -67,7 +67,11 @@ export default function NewPetPage() {
     const file = e.target.files?.[0]
     if (file) {
       setPhotoFile(file)
-      setPhotoPreview(URL.createObjectURL(file))
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        setPhotoPreview(ev.target?.result as string)
+      }
+      reader.readAsDataURL(file)
     }
   }
 
