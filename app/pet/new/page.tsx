@@ -53,9 +53,11 @@ export default function NewPetPage() {
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoRetried, setPhotoRetried] = useState(false)
   const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
+  const [secondName, setSecondName] = useState('')
+  const [lastNamePaterno, setLastNamePaterno] = useState('')
+  const [lastNameMaterno, setLastNameMaterno] = useState('')
   const [nickname, setNickname] = useState('')
-  const name = `${firstName} ${lastName}`.trim()
+  const name = [firstName, secondName, lastNamePaterno, lastNameMaterno].filter(Boolean).join(' ').trim()
   const [species, setSpecies] = useState<'canine' | 'feline' | ''>('')
   const [breed, setBreed] = useState('')
   const [customBreed, setCustomBreed] = useState('')
@@ -144,7 +146,7 @@ export default function NewPetPage() {
 
   const canContinue = () => {
     switch (step) {
-      case 1: return firstName.trim().length > 0 && lastName.trim().length > 0
+      case 1: return firstName.trim().length > 0 && lastNamePaterno.trim().length > 0
       case 2: return species !== ''
       case 3: return sex !== ''
       case 4: return breed !== '' && dateOfBirth !== '' && color.trim() !== '' && weight !== ''
@@ -385,7 +387,7 @@ export default function NewPetPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
                       <label className="text-[10px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: theme.textMuted }}>
-                        Nombre *
+                        Primer nombre *
                       </label>
                       <input
                         type="text"
@@ -399,14 +401,42 @@ export default function NewPetPage() {
                     </div>
                     <div className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
                       <label className="text-[10px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: theme.textMuted }}>
-                        Apellido *
+                        Segundo nombre
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Opcional"
+                        value={secondName}
+                        onChange={e => setSecondName(e.target.value)}
+                        className="w-full text-sm bg-transparent outline-none"
+                        style={{ color: theme.text }}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
+                      <label className="text-[10px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: theme.textMuted }}>
+                        Apellido paterno *
                       </label>
                       <input
                         type="text"
                         placeholder="Ej: Montenegro"
-                        value={lastName}
-                        onChange={e => setLastName(e.target.value)}
+                        value={lastNamePaterno}
+                        onChange={e => setLastNamePaterno(e.target.value)}
                         className="w-full text-sm font-bold bg-transparent outline-none"
+                        style={{ color: theme.text }}
+                      />
+                    </div>
+                    <div className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
+                      <label className="text-[10px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: theme.textMuted }}>
+                        Apellido materno
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Opcional"
+                        value={lastNameMaterno}
+                        onChange={e => setLastNameMaterno(e.target.value)}
+                        className="w-full text-sm bg-transparent outline-none"
                         style={{ color: theme.text }}
                       />
                     </div>
