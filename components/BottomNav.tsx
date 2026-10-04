@@ -45,7 +45,7 @@ export default function BottomNav() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-40"
-            style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)' }}
+            style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
             onClick={() => setShowMore(false)}
           />
         )}
@@ -54,7 +54,7 @@ export default function BottomNav() {
       {/* Floating menu items */}
       <AnimatePresence>
         {showMore && (
-          <div className="fixed bottom-[84px] right-5 z-50 flex flex-col items-end gap-2.5">
+          <div className="fixed bottom-[84px] right-4 z-50 flex flex-col items-end gap-3">
             {moreMenuItems.map((item, i) => (
               <motion.button
                 key={item.label}
@@ -87,10 +87,11 @@ export default function BottomNav() {
                   {item.label}
                 </motion.span>
                 <div
-                  className="w-11 h-11 rounded-full flex items-center justify-center shadow-md"
+                  className="w-12 h-12 rounded-full flex items-center justify-center"
                   style={{
                     background: theme.bgCard,
                     border: `1px solid ${theme.border}`,
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
                   }}
                 >
                   <item.icon size={20} color={item.color} strokeWidth={1.8} />

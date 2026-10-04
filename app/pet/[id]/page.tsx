@@ -1115,11 +1115,11 @@ export default function PetProfilePage() {
               {/* Card header */}
               <div className="px-5 py-3 flex items-center justify-between"
                 style={{ background: theme.primary }}>
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center p-1">
-                    <Image src="/petid-icon-white.png" alt="PetID" width={18} height={18} />
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                    <Image src="/petid-icon-white.png" alt="PetID" width={24} height={24} />
                   </div>
-                  <span className="text-white font-bold text-sm tracking-wide">PetID</span>
+                  <span className="text-white font-bold text-[15px] tracking-wide">PetID</span>
                 </div>
                 <span className="text-white/60 text-[10px] font-medium tracking-widest uppercase">Identidad Digital</span>
               </div>
