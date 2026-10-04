@@ -105,7 +105,9 @@ export default function DashboardPage() {
           <p className="text-sm" style={{ color: theme.textMuted }}>
             {pets.length === 0
               ? 'Registra tu primera mascota'
-              : `Cuidando ${pets.length} mascota${pets.length > 1 ? 's' : ''} con amor`}
+              : pets.length === 1
+                ? `${pets[0].sex === 'female' ? 'Mama' : 'Papa'} de ${pets[0].name}`
+                : `${pets[0].sex === 'female' ? 'Mama' : 'Papa'} de ${pets.map(p => p.name).join(' y ')}`}
           </p>
         </motion.div>
 

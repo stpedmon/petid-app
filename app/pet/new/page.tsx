@@ -1,12 +1,13 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
-import TopBar from '@/components/TopBar'
-import BottomNav from '@/components/BottomNav'
-import { Camera, ArrowLeft, Sparkles } from 'lucide-react'
+import {
+  Camera, ArrowLeft, ArrowRight, Sparkles, Check,
+  Dog, Cat, ChevronLeft, Upload, X, Weight, Cpu
+} from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export const dynamic = 'force-dynamic'
@@ -22,17 +23,43 @@ const personalities = [
   'Inteligente', 'Carinoso', 'Energetico', 'Independiente'
 ]
 
+const breeds: Record<string, string[]> = {
+  canine: [
+    'Mestizo', 'Labrador', 'Golden Retriever', 'Pastor Aleman', 'Bulldog Frances',
+    'Chihuahua', 'Poodle', 'Husky Siberiano', 'Beagle', 'Rottweiler',
+    'Yorkshire Terrier', 'Boxer', 'Dachshund', 'Pitbull', 'Schnauzer',
+    'Cocker Spaniel', 'Pomerania', 'Shih Tzu', 'Border Collie', 'Otro'
+  ],
+  feline: [
+    'Mestizo', 'Siames', 'Persa', 'Maine Coon', 'Bengala',
+    'Ragdoll', 'British Shorthair', 'Abisinio', 'Scottish Fold',
+    'Sphynx', 'Angora', 'Burmese', 'Otro'
+  ],
+}
+
+const TOTAL_STEPS = 6
+
 export default function NewPetPage() {
   const { user } = useAuth()
   const { theme } = useTheme()
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [saving, setSaving] = useState(false)
+  const [step, setStep] = useState(1)
+  const [direction, setDirection] = useState(1)
+
+  // Form state
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
-  const [form, setForm] = useState({
-    name: '', species: 'canine', breed: '', sex: 'male',
-    date_of_birth: '', color: '', weight: '', microchip_number: ''
-  })
+  const [name, setName] = useState('')
+  const [species, setSpecies] = useState<'canine' | 'feline' | ''>('')
+  const [breed, setBreed] = useState('')
+  const [customBreed, setCustomBreed] = useState('')
+  const [sex, setSex] = useState<'male' | 'female' | ''>('')
+  const [dateOfBirth, setDateOfBirth] = useState('')
+  const [color, setColor] = useState('')
+  const [weight, setWeight] = useState('')
+  const [microchip, setMicrochip] = useState('')
   const [selectedHobbies, setSelectedHobbies] = useState<string[]>([])
   const [selectedPersonality, setSelectedPersonality] = useState<string[]>([])
 
@@ -44,12 +71,42 @@ export default function NewPetPage() {
     }
   }
 
+  const removePhoto = () => {
+    setPhotoFile(null)
+    setPhotoPreview(null)
+  }
+
   const toggleChip = (item: string, list: string[], setList: (v: string[]) => void) => {
     setList(list.includes(item) ? list.filter(x => x !== item) : [...list, item])
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const canContinue = () => {
+    switch (step) {
+      case 1: return name.trim().length > 0
+      case 2: return species !== ''
+      case 3: return sex !== ''
+      case 4: return true // breed/details are optional
+      case 5: return true // hobbies optional
+      case 6: return true // personality optional
+      default: return false
+    }
+  }
+
+  const goNext = () => {
+    if (step < TOTAL_STEPS) {
+      setDirection(1)
+      setStep(step + 1)
+    }
+  }
+
+  const goBack = () => {
+    if (step > 1) {
+      setDirection(-1)
+      setStep(step - 1)
+    }
+  }
+
+  const handleSubmit = async () => {
     if (!user) return
     setSaving(true)
 
@@ -67,17 +124,19 @@ export default function NewPetPage() {
         }
       }
 
+      const finalBreed = breed === 'Otro' ? customBreed : breed
+
       const { data: pet, error: petErr } = await supabase
         .from('petid_pets')
         .insert({
-          name: form.name,
-          species: form.species,
-          breed: form.breed,
-          sex: form.sex,
-          date_of_birth: form.date_of_birth || null,
-          color: form.color || null,
-          weight_kg: form.weight ? parseFloat(form.weight) : null,
-          microchip_number: form.microchip_number || null,
+          name,
+          species: species || 'canine',
+          breed: finalBreed,
+          sex: sex || 'male',
+          date_of_birth: dateOfBirth || null,
+          color: color || null,
+          weight_kg: weight ? parseFloat(weight) : null,
+          microchip_number: microchip || null,
           photo_url,
           hobbies: selectedHobbies,
           personality: selectedPersonality,
@@ -109,221 +168,552 @@ export default function NewPetPage() {
     }
   }
 
-  const inputClass = "w-full px-4 py-3.5 rounded-xl border text-sm outline-none focus:ring-2 transition-all"
-
-  const inputStyle = {
-    borderColor: theme.border,
-    background: theme.bgCard,
-    color: theme.text,
-    focusRingColor: `${theme.primary}30`,
+  const slideVariants = {
+    enter: (d: number) => ({ x: d > 0 ? 300 : -300, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (d: number) => ({ x: d > 0 ? -300 : 300, opacity: 0 }),
   }
 
+  const progressWidth = `${(step / TOTAL_STEPS) * 100}%`
+
   return (
-    <div className="min-h-screen pb-24" style={{ background: theme.bg }}>
-      <TopBar title="Nueva Mascota" />
-
-      <div className="px-5 py-5">
-        <motion.button
-          initial={{ x: -10, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm font-medium mb-5"
-          style={{ color: theme.primary }}
-        >
-          <ArrowLeft size={18} /> Volver
-        </motion.button>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Photo */}
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="flex justify-center mb-2"
+    <div className="min-h-screen flex flex-col" style={{ background: theme.bg }}>
+      {/* Header */}
+      <div className="px-5 pt-5 pb-3">
+        <div className="flex items-center justify-between mb-4">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={step > 1 ? goBack : () => router.back()}
+            className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
           >
-            <label className="cursor-pointer group">
-              <div
-                className="w-28 h-28 rounded-3xl flex items-center justify-center overflow-hidden relative"
-                style={{
-                  background: `linear-gradient(135deg, ${theme.primaryLight}, ${theme.bg})`,
-                  border: `3px dashed ${theme.primary}50`,
-                }}
-              >
-                {photoPreview ? (
-                  <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="text-center">
-                    <Camera size={28} color={theme.primary} className="mx-auto mb-1" />
-                    <span className="text-[10px] font-semibold" style={{ color: theme.primary }}>
-                      Agregar foto
-                    </span>
+            <ChevronLeft size={20} color={theme.text} />
+          </motion.button>
+          <span className="text-xs font-semibold" style={{ color: theme.textMuted }}>
+            {step} de {TOTAL_STEPS}
+          </span>
+          {step > 1 ? (
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={goNext}
+              className="text-xs font-semibold px-3 py-1.5 rounded-full"
+              style={{ color: theme.textMuted }}
+            >
+              Saltar
+            </motion.button>
+          ) : <div className="w-10" />}
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-1 rounded-full overflow-hidden" style={{ background: theme.primaryLight }}>
+          <motion.div
+            className="h-full rounded-full"
+            style={{ background: `linear-gradient(90deg, ${theme.primary}, ${theme.accent})` }}
+            animate={{ width: progressWidth }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+          />
+        </div>
+      </div>
+
+      {/* Step content */}
+      <div className="flex-1 px-5 overflow-hidden relative">
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={step}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className="absolute inset-0 px-5 pt-4 pb-24 overflow-y-auto"
+          >
+            {/* Step 1: Name + Photo */}
+            {step === 1 && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-2xl font-bold mb-2" style={{ color: theme.text, fontFamily: "'Playfair Display', serif" }}>
+                    Como se llama tu mascota?
+                  </h1>
+                  <p className="text-sm" style={{ color: theme.textMuted }}>
+                    Dale un nombre unico a tu nuevo compañero
+                  </p>
+                </div>
+
+                {/* Large photo upload */}
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.15 }}
+                  className="flex justify-center"
+                >
+                  <div className="relative">
+                    <label className="cursor-pointer block">
+                      <div
+                        className="w-36 h-36 rounded-[2rem] flex items-center justify-center overflow-hidden"
+                        style={{
+                          background: photoPreview
+                            ? 'transparent'
+                            : `linear-gradient(135deg, ${theme.primaryLight}, ${theme.bg})`,
+                          border: photoPreview ? 'none' : `3px dashed ${theme.primary}40`,
+                          boxShadow: photoPreview ? `0 8px 30px ${theme.primary}20` : 'none',
+                        }}
+                      >
+                        {photoPreview ? (
+                          <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="text-center">
+                            <div className="w-14 h-14 rounded-2xl mx-auto mb-2 flex items-center justify-center"
+                              style={{ background: `${theme.primary}15` }}>
+                              <Camera size={28} color={theme.primary} />
+                            </div>
+                            <span className="text-xs font-semibold" style={{ color: theme.primary }}>
+                              Agregar foto
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhoto} className="hidden" />
+                    </label>
+                    {photoPreview && (
+                      <motion.button
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={removePhoto}
+                        className="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
+                        style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
+                      >
+                        <X size={14} color={theme.textMuted} />
+                      </motion.button>
+                    )}
                   </div>
+                </motion.div>
+
+                {/* Name input */}
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.25 }}
+                >
+                  <input
+                    type="text"
+                    placeholder="Ej: Luna, Max, Rocky..."
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    autoFocus
+                    className="w-full text-center text-2xl font-bold py-4 bg-transparent outline-none"
+                    style={{
+                      color: theme.text,
+                      borderBottom: `2px solid ${name ? theme.primary : theme.border}`,
+                      fontFamily: "'Playfair Display', serif",
+                    }}
+                  />
+                  {name && (
+                    <motion.p
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-center text-sm mt-3"
+                      style={{ color: theme.primary }}
+                    >
+                      {name} suena increible!
+                    </motion.p>
+                  )}
+                </motion.div>
+              </div>
+            )}
+
+            {/* Step 2: Species */}
+            {step === 2 && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-2xl font-bold mb-2" style={{ color: theme.text, fontFamily: "'Playfair Display', serif" }}>
+                    {name} es un...
+                  </h1>
+                  <p className="text-sm" style={{ color: theme.textMuted }}>
+                    Selecciona el tipo de mascota
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-6">
+                  {[
+                    { value: 'canine', label: 'Perro', Icon: Dog },
+                    { value: 'feline', label: 'Gato', Icon: Cat },
+                  ].map(({ value, label, Icon }) => {
+                    const selected = species === value
+                    return (
+                      <motion.button
+                        key={value}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => { setSpecies(value as any); setBreed('') }}
+                        className="rounded-3xl p-6 text-center relative overflow-hidden"
+                        style={{
+                          background: selected
+                            ? `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`
+                            : theme.bgCard,
+                          border: selected ? 'none' : `2px solid ${theme.border}`,
+                          boxShadow: selected ? `0 8px 25px ${theme.primary}30` : 'none',
+                        }}
+                      >
+                        <div className="w-20 h-20 rounded-2xl mx-auto mb-3 flex items-center justify-center"
+                          style={{
+                            background: selected ? 'rgba(255,255,255,0.2)' : `${theme.primary}10`,
+                          }}>
+                          <Icon size={40} color={selected ? '#fff' : theme.primary} strokeWidth={1.5} />
+                        </div>
+                        <p className="font-bold text-lg"
+                          style={{ color: selected ? '#fff' : theme.text }}>
+                          {label}
+                        </p>
+                        {selected && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/30 flex items-center justify-center"
+                          >
+                            <Check size={14} color="#fff" />
+                          </motion.div>
+                        )}
+                      </motion.button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Sex */}
+            {step === 3 && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-2xl font-bold mb-2" style={{ color: theme.text, fontFamily: "'Playfair Display', serif" }}>
+                    {name} es...
+                  </h1>
+                  <p className="text-sm" style={{ color: theme.textMuted }}>
+                    Selecciona el sexo de {name}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-6">
+                  {[
+                    { value: 'male', label: 'Macho', color: '#4A90D9' },
+                    { value: 'female', label: 'Hembra', color: '#E87DA0' },
+                  ].map(({ value, label, color: c }) => {
+                    const selected = sex === value
+                    return (
+                      <motion.button
+                        key={value}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setSex(value as any)}
+                        className="rounded-3xl p-6 text-center relative overflow-hidden"
+                        style={{
+                          background: selected
+                            ? `linear-gradient(135deg, ${c}, ${c}CC)`
+                            : theme.bgCard,
+                          border: selected ? 'none' : `2px solid ${theme.border}`,
+                          boxShadow: selected ? `0 8px 25px ${c}30` : 'none',
+                        }}
+                      >
+                        <div className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center text-3xl"
+                          style={{
+                            background: selected ? 'rgba(255,255,255,0.2)' : `${c}15`,
+                          }}>
+                          <span style={{ color: selected ? '#fff' : c, fontSize: '2rem', lineHeight: 1 }}>
+                            {value === 'male' ? '♂' : '♀'}
+                          </span>
+                        </div>
+                        <p className="font-bold text-lg"
+                          style={{ color: selected ? '#fff' : theme.text }}>
+                          {label}
+                        </p>
+                        {selected && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/30 flex items-center justify-center"
+                          >
+                            <Check size={14} color="#fff" />
+                          </motion.div>
+                        )}
+                      </motion.button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Breed + Details */}
+            {step === 4 && (
+              <div className="space-y-5">
+                <div>
+                  <h1 className="text-2xl font-bold mb-2" style={{ color: theme.text, fontFamily: "'Playfair Display', serif" }}>
+                    Cuentanos mas de {name}
+                  </h1>
+                  <p className="text-sm" style={{ color: theme.textMuted }}>
+                    Estos datos son opcionales pero ayudan a identificar a {name}
+                  </p>
+                </div>
+
+                {/* Breed selector */}
+                <div className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
+                  <label className="text-xs font-semibold mb-2 block" style={{ color: theme.textMuted }}>Raza</label>
+                  <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto">
+                    {(breeds[species || 'canine'] || breeds.canine).map(b => {
+                      const selected = breed === b
+                      return (
+                        <motion.button
+                          key={b}
+                          type="button"
+                          whileTap={{ scale: 0.92 }}
+                          onClick={() => setBreed(b)}
+                          className="px-3 py-2 rounded-xl text-xs font-medium transition-all"
+                          style={{
+                            background: selected
+                              ? `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`
+                              : theme.bg,
+                            color: selected ? '#fff' : theme.text,
+                            border: `1px solid ${selected ? 'transparent' : theme.border}`,
+                          }}
+                        >
+                          {b}
+                        </motion.button>
+                      )
+                    })}
+                  </div>
+                  {breed === 'Otro' && (
+                    <motion.input
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      type="text"
+                      placeholder="Escribe la raza..."
+                      value={customBreed}
+                      onChange={e => setCustomBreed(e.target.value)}
+                      className="w-full mt-3 px-4 py-3 rounded-xl text-sm outline-none"
+                      style={{ background: theme.bg, color: theme.text, border: `1px solid ${theme.border}` }}
+                    />
+                  )}
+                </div>
+
+                {/* Date + Color row */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
+                    <label className="text-xs font-semibold mb-2 block" style={{ color: theme.textMuted }}>Nacimiento</label>
+                    <input
+                      type="date"
+                      value={dateOfBirth}
+                      onChange={e => setDateOfBirth(e.target.value)}
+                      className="w-full text-sm bg-transparent outline-none"
+                      style={{ color: theme.text }}
+                    />
+                  </div>
+                  <div className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
+                    <label className="text-xs font-semibold mb-2 block" style={{ color: theme.textMuted }}>Color</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Dorado"
+                      value={color}
+                      onChange={e => setColor(e.target.value)}
+                      className="w-full text-sm bg-transparent outline-none"
+                      style={{ color: theme.text }}
+                    />
+                  </div>
+                </div>
+
+                {/* Weight + Microchip row */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
+                    <label className="text-xs font-semibold mb-2 block flex items-center gap-1" style={{ color: theme.textMuted }}>
+                      <Weight size={12} /> Peso (kg)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="Ej: 8.5"
+                      value={weight}
+                      onChange={e => setWeight(e.target.value)}
+                      className="w-full text-sm bg-transparent outline-none"
+                      style={{ color: theme.text }}
+                    />
+                  </div>
+                  <div className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
+                    <label className="text-xs font-semibold mb-2 block flex items-center gap-1" style={{ color: theme.textMuted }}>
+                      <Cpu size={12} /> Microchip
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Numero"
+                      value={microchip}
+                      onChange={e => setMicrochip(e.target.value)}
+                      className="w-full text-sm bg-transparent outline-none"
+                      style={{ color: theme.text }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 5: Hobbies */}
+            {step === 5 && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-2xl font-bold mb-2" style={{ color: theme.text, fontFamily: "'Playfair Display', serif" }}>
+                    Que le gusta a {name}?
+                  </h1>
+                  <p className="text-sm" style={{ color: theme.textMuted }}>
+                    Selecciona los hobbies favoritos de {name}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  {hobbies.map((h, i) => {
+                    const selected = selectedHobbies.includes(h)
+                    return (
+                      <motion.button
+                        key={h}
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: i * 0.04 }}
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => toggleChip(h, selectedHobbies, setSelectedHobbies)}
+                        className="px-4 py-3 rounded-2xl text-sm font-medium transition-all"
+                        style={{
+                          background: selected
+                            ? `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`
+                            : theme.bgCard,
+                          color: selected ? '#fff' : theme.text,
+                          border: `1.5px solid ${selected ? 'transparent' : theme.border}`,
+                          boxShadow: selected ? `0 4px 15px ${theme.primary}25` : 'none',
+                        }}
+                      >
+                        {h}
+                      </motion.button>
+                    )
+                  })}
+                </div>
+
+                {selectedHobbies.length > 0 && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-sm text-center"
+                    style={{ color: theme.primary }}
+                  >
+                    {selectedHobbies.length} hobbie{selectedHobbies.length > 1 ? 's' : ''} seleccionado{selectedHobbies.length > 1 ? 's' : ''}
+                  </motion.p>
                 )}
               </div>
-              <input type="file" accept="image/*" onChange={handlePhoto} className="hidden" />
-            </label>
-          </motion.div>
+            )}
 
-          {/* Basic info card */}
-          <motion.div
-            initial={{ y: 15, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="rounded-2xl p-5 space-y-3.5"
-            style={{
-              background: theme.bgCard,
-              border: `1px solid ${theme.border}`,
-              boxShadow: `0 2px 12px ${theme.primary}06`,
-            }}
-          >
-            <h3 className="font-bold text-sm" style={{ color: theme.text }}>Información básica</h3>
+            {/* Step 6: Personality */}
+            {step === 6 && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-2xl font-bold mb-2" style={{ color: theme.text, fontFamily: "'Playfair Display', serif" }}>
+                    Como es la personalidad de {name}?
+                  </h1>
+                  <p className="text-sm" style={{ color: theme.textMuted }}>
+                    Describe como es {name} en su dia a dia
+                  </p>
+                </div>
 
-            <input
-              type="text" placeholder="Nombre de la mascota *" required
-              value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-              className={inputClass}
-              style={{ borderColor: theme.border, background: theme.bg, color: theme.text }}
-            />
+                <div className="flex flex-wrap gap-3">
+                  {personalities.map((p, i) => {
+                    const selected = selectedPersonality.includes(p)
+                    return (
+                      <motion.button
+                        key={p}
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: i * 0.04 }}
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => toggleChip(p, selectedPersonality, setSelectedPersonality)}
+                        className="px-4 py-3 rounded-2xl text-sm font-medium transition-all"
+                        style={{
+                          background: selected
+                            ? `linear-gradient(135deg, ${theme.accent}, ${theme.primary})`
+                            : theme.bgCard,
+                          color: selected ? '#fff' : theme.text,
+                          border: `1.5px solid ${selected ? 'transparent' : theme.border}`,
+                          boxShadow: selected ? `0 4px 15px ${theme.accent}25` : 'none',
+                        }}
+                      >
+                        {p}
+                      </motion.button>
+                    )
+                  })}
+                </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <select
-                value={form.species} onChange={e => setForm({ ...form, species: e.target.value })}
-                className={inputClass}
-                style={{ borderColor: theme.border, background: theme.bg, color: theme.text }}
-              >
-                <option value="canine">Perro</option>
-                <option value="feline">Gato</option>
-              </select>
-              <select
-                value={form.sex} onChange={e => setForm({ ...form, sex: e.target.value })}
-                className={inputClass}
-                style={{ borderColor: theme.border, background: theme.bg, color: theme.text }}
-              >
-                <option value="male">Macho</option>
-                <option value="female">Hembra</option>
-              </select>
-            </div>
-
-            <input
-              type="text" placeholder="Raza"
-              value={form.breed} onChange={e => setForm({ ...form, breed: e.target.value })}
-              className={inputClass}
-              style={{ borderColor: theme.border, background: theme.bg, color: theme.text }}
-            />
-
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                type="date" placeholder="Nacimiento"
-                value={form.date_of_birth} onChange={e => setForm({ ...form, date_of_birth: e.target.value })}
-                className={inputClass}
-                style={{ borderColor: theme.border, background: theme.bg, color: theme.text }}
-              />
-              <input
-                type="text" placeholder="Color"
-                value={form.color} onChange={e => setForm({ ...form, color: e.target.value })}
-                className={inputClass}
-                style={{ borderColor: theme.border, background: theme.bg, color: theme.text }}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                type="number" step="0.1" placeholder="Peso (kg)"
-                value={form.weight} onChange={e => setForm({ ...form, weight: e.target.value })}
-                className={inputClass}
-                style={{ borderColor: theme.border, background: theme.bg, color: theme.text }}
-              />
-              <input
-                type="text" placeholder="Microchip #"
-                value={form.microchip_number} onChange={e => setForm({ ...form, microchip_number: e.target.value })}
-                className={inputClass}
-                style={{ borderColor: theme.border, background: theme.bg, color: theme.text }}
-              />
-            </div>
-          </motion.div>
-
-          {/* Hobbies */}
-          <motion.div
-            initial={{ y: 15, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="rounded-2xl p-5"
-            style={{
-              background: theme.bgCard,
-              border: `1px solid ${theme.border}`,
-              boxShadow: `0 2px 12px ${theme.primary}06`,
-            }}
-          >
-            <h3 className="font-bold text-sm mb-3" style={{ color: theme.text }}>Hobbies favoritos</h3>
-            <div className="flex flex-wrap gap-2">
-              {hobbies.map(h => {
-                const selected = selectedHobbies.includes(h)
-                return (
-                  <motion.button
-                    key={h} type="button"
-                    whileTap={{ scale: 0.92 }}
-                    onClick={() => toggleChip(h, selectedHobbies, setSelectedHobbies)}
-                    className="px-3 py-2 rounded-xl text-xs font-medium border transition-all"
-                    style={{
-                      background: selected
-                        ? `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`
-                        : theme.bg,
-                      color: selected ? '#fff' : theme.text,
-                      borderColor: selected ? 'transparent' : theme.border,
-                      boxShadow: selected ? `0 3px 10px ${theme.primary}25` : 'none',
-                    }}
+                {selectedPersonality.length > 0 && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-sm text-center"
+                    style={{ color: theme.accent }}
                   >
-                    {h}
-                  </motion.button>
-                )
-              })}
-            </div>
-          </motion.div>
+                    {name} es {selectedPersonality.join(', ')}
+                  </motion.p>
+                )}
 
-          {/* Personality */}
-          <motion.div
-            initial={{ y: 15, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="rounded-2xl p-5"
-            style={{
-              background: theme.bgCard,
-              border: `1px solid ${theme.border}`,
-              boxShadow: `0 2px 12px ${theme.primary}06`,
-            }}
-          >
-            <h3 className="font-bold text-sm mb-3" style={{ color: theme.text }}>Personalidad</h3>
-            <div className="flex flex-wrap gap-2">
-              {personalities.map(p => {
-                const selected = selectedPersonality.includes(p)
-                return (
-                  <motion.button
-                    key={p} type="button"
-                    whileTap={{ scale: 0.92 }}
-                    onClick={() => toggleChip(p, selectedPersonality, setSelectedPersonality)}
-                    className="px-3 py-2 rounded-xl text-xs font-medium border transition-all"
-                    style={{
-                      background: selected
-                        ? `linear-gradient(135deg, ${theme.accent}, ${theme.primary})`
-                        : theme.bg,
-                      color: selected ? '#fff' : theme.text,
-                      borderColor: selected ? 'transparent' : theme.border,
-                      boxShadow: selected ? `0 3px 10px ${theme.accent}25` : 'none',
-                    }}
-                  >
-                    {p}
-                  </motion.button>
-                )
-              })}
-            </div>
+                {/* Summary preview */}
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="rounded-2xl p-5 mt-4"
+                  style={{
+                    background: theme.bgCard,
+                    border: `1px solid ${theme.border}`,
+                    boxShadow: `0 4px 20px ${theme.primary}08`,
+                  }}
+                >
+                  <p className="text-xs font-semibold mb-3" style={{ color: theme.textMuted }}>
+                    Vista previa de la tarjeta
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center"
+                      style={{ background: `linear-gradient(135deg, ${theme.primaryLight}, ${theme.bg})` }}>
+                      {photoPreview ? (
+                        <img src={photoPreview} alt={name} className="w-full h-full object-cover" />
+                      ) : (
+                        <Camera size={18} color={theme.textMuted} />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-bold" style={{ color: theme.text }}>{name || 'Tu mascota'}</p>
+                      <p className="text-xs" style={{ color: theme.textMuted }}>
+                        {breed && breed !== 'Otro' ? breed : customBreed || (species === 'feline' ? 'Gato' : 'Perro')}
+                        {sex === 'male' ? ' - Macho' : sex === 'female' ? ' - Hembra' : ''}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            )}
           </motion.div>
+        </AnimatePresence>
+      </div>
 
-          {/* Submit */}
+      {/* Bottom action */}
+      <div className="px-5 pb-8 pt-3" style={{ background: theme.bg }}>
+        {step < TOTAL_STEPS ? (
           <motion.button
-            initial={{ y: 15, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4 }}
             whileTap={{ scale: 0.97 }}
-            type="submit" disabled={saving}
+            onClick={goNext}
+            disabled={!canContinue()}
+            className="w-full py-4 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-30"
+            style={{
+              background: canContinue()
+                ? `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`
+                : theme.border,
+              boxShadow: canContinue() ? `0 8px 25px ${theme.primary}30` : 'none',
+            }}
+          >
+            Continuar <ArrowRight size={18} />
+          </motion.button>
+        ) : (
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={handleSubmit}
+            disabled={saving}
             className="w-full py-4 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
             style={{
               background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`,
@@ -339,14 +729,12 @@ export default function NewPetPage() {
             ) : (
               <>
                 <Sparkles size={18} />
-                Registrar Mascota
+                Crear tarjeta de {name}
               </>
             )}
           </motion.button>
-        </form>
+        )}
       </div>
-
-      <BottomNav />
     </div>
   )
 }
