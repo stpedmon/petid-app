@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
 import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
-import { PlusCircle, ChevronRight, Sparkles, Syringe, QrCode, Shield, Camera, Heart, MapPin, Calendar } from 'lucide-react'
+import { PlusCircle, ChevronRight, Sparkles, Syringe, QrCode, Shield, Camera, Heart, MapPin, Calendar, PawPrint } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export const dynamic = 'force-dynamic'
@@ -65,12 +65,10 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: theme.bg }}>
         <motion.div
-          animate={{ scale: [1, 1.3, 1] }}
+          animate={{ scale: [1, 1.3, 1], rotate: [0, 10, -10, 0] }}
           transition={{ duration: 1.5, repeat: Infinity }}
-          className="w-12 h-12 rounded-2xl flex items-center justify-center"
-          style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}
         >
-          <QrCode size={24} color="#fff" />
+          <PawPrint size={48} color={theme.primary} strokeWidth={1.5} />
         </motion.div>
       </div>
     )

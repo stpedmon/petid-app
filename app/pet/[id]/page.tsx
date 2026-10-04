@@ -6,7 +6,8 @@ import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
 import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
-import { ArrowLeft, CreditCard, Syringe, FileText, Edit, Share2, QrCode, Camera } from 'lucide-react'
+import { ArrowLeft, CreditCard, Syringe, FileText, Edit, Share2, QrCode, Camera, PawPrint } from 'lucide-react'
+import { motion } from 'framer-motion'
 import QRCode from 'react-qr-code'
 
 interface Pet {
@@ -70,9 +71,12 @@ export default function PetProfilePage() {
   if (loading || !pet) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: theme.bg }}>
-        <div className="w-12 h-12 rounded-2xl flex items-center justify-center animate-pulse" style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}>
-          <QrCode size={24} color="#fff" />
-        </div>
+        <motion.div
+          animate={{ scale: [1, 1.3, 1], rotate: [0, 10, -10, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        >
+          <PawPrint size={48} color={theme.primary} strokeWidth={1.5} />
+        </motion.div>
       </div>
     )
   }

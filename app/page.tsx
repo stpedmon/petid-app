@@ -27,10 +27,9 @@ export default function Home() {
       <motion.div
         animate={{ scale: [1, 1.2, 1], rotate: [0, 5, -5, 0] }}
         transition={{ duration: 1.5, repeat: Infinity }}
-        className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-        style={{ background: 'linear-gradient(135deg, #1B6B4A, #2ECC71)' }}
+        className="mb-4"
       >
-        <PawPrint size={32} color="#fff" />
+        <PawPrint size={48} color="rgba(255,255,255,0.6)" strokeWidth={1.5} />
       </motion.div>
       <motion.p
         initial={{ opacity: 0 }}
