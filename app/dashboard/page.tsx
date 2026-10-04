@@ -90,7 +90,7 @@ export default function DashboardPage() {
     }
   }, [userName])
 
-  // Rotate pet thoughts every 7 seconds (slower)
+  // Rotate pet thoughts every 60 seconds
   useEffect(() => {
     const startIndex = Math.floor(Math.random() * petThoughts.length)
     setThoughtIndex(startIndex)
