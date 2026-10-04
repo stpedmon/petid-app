@@ -5,9 +5,10 @@ import { supabase } from '@/lib/supabase'
 import { useTheme } from '@/lib/ThemeContext'
 import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
-import { ArrowLeft, CreditCard, Syringe, FileText, Share2, QrCode, Camera, PawPrint, Plus, Save, X, Pencil, ImageIcon, Trash2 } from 'lucide-react'
+import { ArrowLeft, CreditCard, Syringe, FileText, Share2, QrCode, Camera, PawPrint, Plus, Save, X, Pencil, ImageIcon, Trash2, Download, Smartphone } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import QRCode from 'react-qr-code'
+import { toPng } from 'html-to-image'
 
 interface Pet {
   id: string; name: string; nickname: string | null; species: string; breed: string; sex: string;
@@ -71,6 +72,8 @@ export default function PetProfilePage() {
 
   const profilePhotoRef = useRef<HTMLInputElement>(null)
   const adventurePhotoRef = useRef<HTMLInputElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [downloadingCard, setDownloadingCard] = useState(false)
 
   useEffect(() => {
     fetchPet()
@@ -224,6 +227,39 @@ export default function PetProfilePage() {
       setViewingPhoto(null)
     } catch (err: any) {
       alert(err.message || 'Error al eliminar')
+    }
+  }
+
+  const downloadCard = async () => {
+    if (!cardRef.current || !pet) return
+    setDownloadingCard(true)
+    try {
+      const dataUrl = await toPng(cardRef.current, { quality: 1, pixelRatio: 3 })
+      // Try share first (mobile), fallback to download
+      if (navigator.share) {
+        const res = await fetch(dataUrl)
+        const blob = await res.blob()
+        const file = new File([blob], `PetID-${pet.name}.png`, { type: 'image/png' })
+        await navigator.share({ title: `Pet ID - ${pet.name}`, files: [file] })
+      } else {
+        const link = document.createElement('a')
+        link.download = `PetID-${pet.name}.png`
+        link.href = dataUrl
+        link.click()
+      }
+    } catch (err: any) {
+      // If share was cancelled, try direct download
+      if (err.name !== 'AbortError') {
+        try {
+          const dataUrl = await toPng(cardRef.current!, { quality: 1, pixelRatio: 3 })
+          const link = document.createElement('a')
+          link.download = `PetID-${pet.name}.png`
+          link.href = dataUrl
+          link.click()
+        } catch { /* ignore */ }
+      }
+    } finally {
+      setDownloadingCard(false)
     }
   }
 
@@ -771,62 +807,188 @@ export default function PetProfilePage() {
         {/* Card tab */}
         {tab === 'card' && (
           <div className="space-y-4">
-            {/* Digital card */}
-            <div className="rounded-2xl overflow-hidden shadow-lg" style={{ background: theme.primary }}>
-              <div className="p-6 text-white">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-lg font-bold" style={{ fontFamily: "'Playfair Display', serif" }}>
-                    Pet ID
-                  </span>
-                  <span className="text-xs opacity-70">Digital</span>
+            {/* ID Card — looks like a real identification card */}
+            <div ref={cardRef} className="rounded-2xl overflow-hidden shadow-2xl" style={{ background: '#fff' }}>
+              {/* Card header band */}
+              <div
+                className="px-5 py-3 flex items-center justify-between"
+                style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.primaryDark})` }}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
+                    <PawPrint size={14} color="#fff" />
+                  </div>
+                  <span className="text-white font-bold text-sm tracking-wide">PET ID</span>
                 </div>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-16 h-16 rounded-full overflow-hidden bg-white/20 flex items-center justify-center">
-                    {pet.photo_url ? (
-                      <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <Camera size={20} color="rgba(255,255,255,0.6)" />
+                <span className="text-white/60 text-[10px] font-medium tracking-widest uppercase">Identidad Digital</span>
+              </div>
+
+              {/* Card body */}
+              <div className="p-5">
+                <div className="flex gap-4">
+                  {/* Photo section */}
+                  <div className="flex-shrink-0">
+                    <div
+                      className="w-24 h-28 rounded-xl overflow-hidden flex items-center justify-center"
+                      style={{ background: '#f0f0f0', border: '2px solid #e0e0e0' }}
+                    >
+                      {pet.photo_url ? (
+                        <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <Camera size={24} color="#999" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Data section */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-lg font-bold text-gray-900 leading-tight truncate">{pet.name}</p>
+                    {pet.nickname && (
+                      <p className="text-xs text-gray-400 mb-2">&ldquo;{pet.nickname}&rdquo;</p>
                     )}
-                  </div>
-                  <div>
-                    <p className="text-xl font-bold">{pet.name}</p>
-                    {pet.nickname && <p className="text-xs opacity-70">&ldquo;{pet.nickname}&rdquo;</p>}
-                    <p className="text-sm opacity-80">{pet.breed}</p>
+                    <div className="space-y-1.5 mt-2">
+                      <div className="flex text-[11px]">
+                        <span className="text-gray-400 w-16 flex-shrink-0">Raza</span>
+                        <span className="text-gray-700 font-semibold truncate">{pet.breed}</span>
+                      </div>
+                      <div className="flex text-[11px]">
+                        <span className="text-gray-400 w-16 flex-shrink-0">Especie</span>
+                        <span className="text-gray-700 font-semibold">{pet.species === 'canine' ? 'Canino' : 'Felino'}</span>
+                      </div>
+                      <div className="flex text-[11px]">
+                        <span className="text-gray-400 w-16 flex-shrink-0">Sexo</span>
+                        <span className="text-gray-700 font-semibold">{pet.sex === 'male' ? 'Macho' : 'Hembra'}</span>
+                      </div>
+                      {age && (
+                        <div className="flex text-[11px]">
+                          <span className="text-gray-400 w-16 flex-shrink-0">Edad</span>
+                          <span className="text-gray-700 font-semibold">{age}</span>
+                        </div>
+                      )}
+                      {pet.color && (
+                        <div className="flex text-[11px]">
+                          <span className="text-gray-400 w-16 flex-shrink-0">Color</span>
+                          <span className="text-gray-700 font-semibold">{pet.color}</span>
+                        </div>
+                      )}
+                      {pet.microchip_number && (
+                        <div className="flex text-[11px]">
+                          <span className="text-gray-400 w-16 flex-shrink-0">Chip</span>
+                          <span className="text-gray-700 font-semibold font-mono text-[10px]">{pet.microchip_number}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div className="flex justify-between text-xs opacity-70">
-                  <span>ID: {pet.id.slice(0, 8)}</span>
-                  <span>{pet.species === 'canine' ? 'Canino' : 'Felino'}</span>
+
+                {/* Divider + QR + ID */}
+                <div className="mt-4 pt-4 flex items-center gap-4" style={{ borderTop: '1px dashed #e0e0e0' }}>
+                  <div className="flex-shrink-0 bg-white p-1.5 rounded-lg" style={{ border: '1px solid #eee' }}>
+                    <QRCode value={publicUrl} size={72} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Número de identificación</p>
+                    <p className="text-xs text-gray-700 font-bold font-mono mt-0.5">{pet.id.slice(0, 8).toUpperCase()}</p>
+                    <p className="text-[10px] text-gray-400 mt-2 uppercase tracking-wider font-medium">Fecha de registro</p>
+                    <p className="text-xs text-gray-700 font-semibold mt-0.5">
+                      {new Date().toLocaleDateString('es', { year: 'numeric', month: 'long' })}
+                    </p>
+                  </div>
                 </div>
               </div>
-              {/* QR section */}
-              <div className="bg-white p-4 flex items-center justify-center">
-                <div className="bg-white p-3 rounded-xl">
-                  <QRCode value={publicUrl} size={140} />
-                </div>
+
+              {/* Card footer band */}
+              <div
+                className="px-5 py-2 flex items-center justify-between"
+                style={{ background: `linear-gradient(135deg, ${theme.primary}15, ${theme.accent}10)` }}
+              >
+                <span className="text-[9px] font-medium tracking-wider uppercase" style={{ color: theme.primary }}>
+                  petid.app/pet/{pet.id.slice(0, 8)}
+                </span>
+                <span className="text-[9px] font-medium" style={{ color: theme.textMuted }}>
+                  ✓ Verificado
+                </span>
               </div>
             </div>
 
-            {/* Share buttons */}
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({ title: `Pet ID - ${pet.name}`, url: publicUrl })
-                  }
-                }}
-                className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium"
-                style={{ background: '#25D366', color: '#fff' }}
-              >
-                <Share2 size={18} /> WhatsApp
-              </button>
-              <button
-                onClick={() => navigator.clipboard.writeText(publicUrl)}
-                className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium border"
-                style={{ borderColor: theme.border, color: theme.text, background: theme.bgCard }}
-              >
-                <QrCode size={18} /> Copiar link
-              </button>
+            {/* Wallet buttons */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold px-1" style={{ color: theme.textMuted }}>Agregar a Wallet</p>
+              <div className="grid grid-cols-2 gap-3">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    // Apple Wallet - would need server-side .pkpass generation
+                    alert('Apple Wallet estará disponible próximamente')
+                  }}
+                  className="flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold"
+                  style={{ background: '#000', color: '#fff' }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                  </svg>
+                  Apple Wallet
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    // Google Wallet - would need Google Wallet API
+                    alert('Google Wallet estará disponible próximamente')
+                  }}
+                  className="flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold"
+                  style={{ background: '#1a73e8', color: '#fff' }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                    <path d="M3.5 9.5L12 4l8.5 5.5V18c0 .83-.67 1.5-1.5 1.5H5c-.83 0-1.5-.67-1.5-1.5V9.5zm2 1.31V18h13V10.81L12 7.27 5.5 10.81zM12 13a2 2 0 100-4 2 2 0 000 4z"/>
+                  </svg>
+                  Google Wallet
+                </motion.button>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold px-1" style={{ color: theme.textMuted }}>Compartir</p>
+              <div className="grid grid-cols-3 gap-2">
+                <motion.button
+                  whileTap={{ scale: 0.93 }}
+                  onClick={downloadCard}
+                  disabled={downloadingCard}
+                  className="flex flex-col items-center gap-1.5 py-3.5 rounded-xl text-xs font-medium disabled:opacity-50"
+                  style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
+                >
+                  <Download size={18} color={theme.primary} />
+                  <span style={{ color: theme.text }}>{downloadingCard ? 'Guardando...' : 'Guardar'}</span>
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.93 }}
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({ title: `Pet ID - ${pet.name}`, url: publicUrl })
+                    } else {
+                      navigator.clipboard.writeText(publicUrl)
+                    }
+                  }}
+                  className="flex flex-col items-center gap-1.5 py-3.5 rounded-xl text-xs font-medium"
+                  style={{ background: '#25D366', color: '#fff' }}
+                >
+                  <Share2 size={18} />
+                  <span>WhatsApp</span>
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.93 }}
+                  onClick={() => {
+                    navigator.clipboard.writeText(publicUrl)
+                      .then(() => alert('Link copiado'))
+                      .catch(() => {})
+                  }}
+                  className="flex flex-col items-center gap-1.5 py-3.5 rounded-xl text-xs font-medium"
+                  style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
+                >
+                  <QrCode size={18} color={theme.primary} />
+                  <span style={{ color: theme.text }}>Copiar link</span>
+                </motion.button>
+              </div>
             </div>
           </div>
         )}

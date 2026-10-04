@@ -24,16 +24,20 @@ export default function BottomNav() {
     setFabOpen(false)
   }, [pathname])
 
-  // Close FAB on outside click
+  // Close FAB on outside click/touch
   useEffect(() => {
     if (!fabOpen) return
-    const handler = (e: MouseEvent) => {
+    const handler = (e: MouseEvent | TouchEvent) => {
       if (fabRef.current && !fabRef.current.contains(e.target as Node)) {
         setFabOpen(false)
       }
     }
     document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    document.addEventListener('touchstart', handler, { passive: true })
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('touchstart', handler)
+    }
   }, [fabOpen])
 
   const navItems = [
