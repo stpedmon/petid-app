@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
 import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
+import ProfilePhotoPrompt from '@/components/ProfilePhotoPrompt'
 import { PlusCircle, ChevronRight, Syringe, QrCode, Camera, Calendar, PawPrint, AlertCircle, Bell } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -29,13 +30,14 @@ interface UpcomingVax {
 }
 
 export default function DashboardPage() {
-  const { user, userRole, loading: authLoading } = useAuth()
+  const { user, userRole, userAvatarUrl, loading: authLoading } = useAuth()
   const { theme } = useTheme()
   const router = useRouter()
   const [pets, setPets] = useState<Pet[]>([])
   const [upcomingVax, setUpcomingVax] = useState<UpcomingVax[]>([])
   const [loading, setLoading] = useState(true)
   const [userName, setUserName] = useState('')
+  const [showPhotoPrompt, setShowPhotoPrompt] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -77,6 +79,20 @@ export default function DashboardPage() {
       if (vaxData) setUpcomingVax(vaxData as any)
     }
     setLoading(false)
+
+    // Show profile photo prompt on first access if no avatar
+    if (!localStorage.getItem('petid_avatar_prompted')) {
+      const { data: avatarData } = await supabase
+        .from('petid_users')
+        .select('avatar_url')
+        .eq('id', user!.id)
+        .single()
+      if (!avatarData?.avatar_url) {
+        setTimeout(() => setShowPhotoPrompt(true), 800)
+      } else {
+        localStorage.setItem('petid_avatar_prompted', '1')
+      }
+    }
   }
 
   const isOverdue = (date: string) => new Date(date) < new Date()
@@ -422,6 +438,11 @@ export default function DashboardPage() {
           </motion.div>
         )}
       </div>
+
+      <ProfilePhotoPrompt
+        show={showPhotoPrompt}
+        onClose={() => setShowPhotoPrompt(false)}
+      />
 
       <BottomNav />
     </div>

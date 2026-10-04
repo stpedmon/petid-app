@@ -1,22 +1,54 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useTheme } from '@/lib/ThemeContext'
 import { useAuth } from '@/lib/AuthContext'
 import { themes, ThemeId } from '@/lib/themes'
 import { supabase } from '@/lib/supabase'
 import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
-import { Check, User, Palette, LogOut, ChevronRight, HelpCircle, Shield, Trash2, AlertTriangle } from 'lucide-react'
+import { Check, User, Palette, LogOut, ChevronRight, HelpCircle, Shield, Trash2, AlertTriangle, Camera } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export const dynamic = 'force-dynamic'
 
 export default function SettingsPage() {
   const { theme, themeId, setThemeId } = useTheme()
-  const { user, signOut } = useAuth()
+  const { user, userAvatarUrl, signOut, refreshAvatar } = useAuth()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+    setUploadingAvatar(true)
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+      const filePath = `${user.id}/avatar.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true })
+      if (uploadError) throw uploadError
+
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath)
+      const avatarUrl = urlData.publicUrl + '?t=' + Date.now()
+
+      await supabase
+        .from('petid_users')
+        .update({ avatar_url: avatarUrl })
+        .eq('id', user.id)
+
+      await refreshAvatar()
+      localStorage.setItem('petid_avatar_prompted', '1')
+    } catch (err) {
+      console.error('Error uploading avatar:', err)
+    }
+    setUploadingAvatar(false)
+  }
 
   const themeList = Object.values(themes)
 
@@ -80,16 +112,54 @@ export default function SettingsPage() {
             className="absolute top-0 left-0 right-0 h-1.5 rounded-t-2xl"
             style={{ background: `linear-gradient(90deg, ${theme.primary}, ${theme.accent})` }}
           />
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
           <div className="flex items-center gap-4">
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center"
-              style={{ background: `linear-gradient(135deg, ${theme.primaryLight}, ${theme.bg})` }}
+            <motion.button
+              whileTap={{ scale: 0.93 }}
+              onClick={() => avatarInputRef.current?.click()}
+              className="relative w-16 h-16 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
+              style={{
+                background: userAvatarUrl ? 'transparent' : `linear-gradient(135deg, ${theme.primaryLight}, ${theme.bg})`,
+                border: `2px solid ${theme.primary}30`,
+              }}
             >
-              <User size={24} color={theme.primary} />
-            </div>
+              {userAvatarUrl ? (
+                <img src={userAvatarUrl} alt="Perfil" className="w-full h-full object-cover" />
+              ) : (
+                <User size={24} color={theme.primary} />
+              )}
+              <div
+                className="absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center"
+                style={{ background: theme.primary, border: `2px solid ${theme.bgCard}` }}
+              >
+                <Camera size={10} color="#fff" />
+              </div>
+              {uploadingAvatar && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-full" style={{ background: 'rgba(0,0,0,0.4)' }}>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                  />
+                </div>
+              )}
+            </motion.button>
             <div>
               <h3 className="font-bold" style={{ color: theme.text }}>Mi Cuenta</h3>
               <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{user?.email}</p>
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                className="text-[11px] font-semibold mt-1"
+                style={{ color: theme.primary }}
+              >
+                {userAvatarUrl ? 'Cambiar foto' : 'Agregar foto'}
+              </button>
             </div>
           </div>
         </motion.div>

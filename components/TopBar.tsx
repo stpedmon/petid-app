@@ -1,13 +1,15 @@
 'use client'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useTheme } from '@/lib/ThemeContext'
 import { useAuth } from '@/lib/AuthContext'
-import { LogOut, Bell } from 'lucide-react'
+import { Bell, User } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export default function TopBar({ title, compact }: { title?: string; compact?: boolean }) {
   const { theme } = useTheme()
-  const { signOut } = useAuth()
+  const { userAvatarUrl } = useAuth()
+  const router = useRouter()
 
   return (
     <motion.header
@@ -59,11 +61,22 @@ export default function TopBar({ title, compact }: { title?: string; compact?: b
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.9 }}
-              onClick={signOut}
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: '#D94B5B12' }}
+              onClick={() => router.push('/settings')}
+              className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0"
+              style={{
+                background: userAvatarUrl ? 'transparent' : theme.primaryLight,
+                border: `2px solid ${theme.primary}30`,
+              }}
             >
-              <LogOut size={18} color="#D94B5B" strokeWidth={1.8} />
+              {userAvatarUrl ? (
+                <img
+                  src={userAvatarUrl}
+                  alt="Perfil"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User size={16} color={theme.primary} strokeWidth={2} />
+              )}
             </motion.button>
           </div>
         </div>
