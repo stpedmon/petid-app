@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useTheme } from '@/lib/ThemeContext'
 import { getPetAge } from '@/lib/petAge'
 import BottomNav from '@/components/BottomNav'
-import { ArrowLeft, Syringe, FileText, Share2, QrCode, Camera, Plus, Save, X, Pencil, Trash2, Download, Clock, ChevronRight, Weight, Calendar, Dna, PawPrint, Compass, MapPin, ShieldCheck, ShieldAlert, Pill } from 'lucide-react'
+import { ArrowLeft, Syringe, FileText, Share2, QrCode, Camera, Plus, Save, X, Pencil, Trash2, Download, Clock, ChevronRight, Weight, Calendar, Dna, PawPrint, Compass, MapPin, ShieldCheck, ShieldAlert, Pill, Bug, Stethoscope, ClipboardList, Heart, AlertCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import QRCode from 'react-qr-code'
 import { toPng } from 'html-to-image'
@@ -109,6 +109,8 @@ export default function PetProfilePage() {
   const [medFormDuration, setMedFormDuration] = useState<number | ''>('')
   const [medFormNotes, setMedFormNotes] = useState('')
   const [medSubmitting, setMedSubmitting] = useState(false)
+  const [showRegisterMenu, setShowRegisterMenu] = useState(false)
+  const [registerType, setRegisterType] = useState<'vaccine' | 'deworming' | 'medication' | null>(null)
 
   const profilePhotoRef = useRef<HTMLInputElement>(null)
   const adventurePhotoRef = useRef<HTMLInputElement>(null)
@@ -118,11 +120,11 @@ export default function PetProfilePage() {
   useEffect(() => { fetchPet() }, [petId])
   useEffect(() => { if (tab === 'history') fetchAdventurePhotos() }, [tab])
   useEffect(() => {
-    if (tab === 'vaccines') {
-      fetchMedications()
-      fetchVaccineCatalog()
-      if (initialTab === 'vaccines') setShowAddVax(true)
-    }
+    fetchMedications()
+    fetchVaccineCatalog()
+  }, [petId])
+  useEffect(() => {
+    if (tab === 'vaccines' && initialTab === 'vaccines') setShowAddVax(true)
   }, [tab])
 
   const fetchPet = async () => {
@@ -361,11 +363,25 @@ export default function PetProfilePage() {
   const age = getAge(pet.date_of_birth)
 
   const tabs = [
-    { key: 'vaccines' as const, label: 'Salud', icon: Syringe },
-    { key: 'history' as const, label: 'Aventuras', icon: Compass },
+    { key: 'vaccines' as const, label: 'Salud', icon: Heart },
+    { key: 'history' as const, label: 'Historial', icon: ClipboardList },
     { key: 'profile' as const, label: 'Perfil', icon: FileText },
     { key: 'qr' as const, label: 'QR', icon: QrCode },
   ]
+
+  // Computed health counts
+  const dewormingMeds = medications.filter(m => m.type === 'antiparasitario')
+  const generalMeds = medications.filter(m => m.type !== 'antiparasitario')
+
+  // Helper for status tags
+  const getHealthStatus = (nextDate: string | null): { label: string; color: string; bg: string } => {
+    if (!nextDate) return { label: 'Completado', color: '#6B7280', bg: '#6B728012' }
+    const days = getDaysUntil(nextDate)
+    if (days === null) return { label: 'Completado', color: '#6B7280', bg: '#6B728012' }
+    if (days < 0) return { label: 'Vencido', color: '#D94B5B', bg: '#D94B5B12' }
+    if (days <= 7) return { label: 'Próximo', color: '#F0A62B', bg: '#F0A62B12' }
+    return { label: 'Al día', color: '#2E9D68', bg: '#2E9D6812' }
+  }
 
   const nextVaccine = vaxRecords.find(r => r.next_dose_date && new Date(r.next_dose_date) > new Date())
 
@@ -532,30 +548,102 @@ export default function PetProfilePage() {
 
       {/* Tab content */}
       <div className="px-5 py-4">
-        {/* ===== SALUD (Vaccines + Medications) tab ===== */}
+        {/* ===== SALUD tab ===== */}
         {tab === 'vaccines' && (
           <div className="space-y-3">
-            {/* Action buttons */}
-            <div className="flex gap-2">
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => { setShowAddVax(!showAddVax); setShowAddMed(false) }}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold"
-                style={{ background: showAddVax ? theme.primary : theme.primaryLight, color: showAddVax ? '#fff' : theme.primary }}
-              >
-                {showAddVax ? <X size={14} /> : <Plus size={14} />}
-                Vacuna
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => { setShowAddMed(!showAddMed); setShowAddVax(false) }}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold"
-                style={{ background: showAddMed ? '#4D91C6' : '#4D91C615', color: showAddMed ? '#fff' : '#4D91C6' }}
-              >
-                {showAddMed ? <X size={14} /> : <Plus size={14} />}
-                Medicamento
-              </motion.button>
+            {/* Health summary cards */}
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { icon: Syringe, label: 'Vacunas', count: vaxRecords.length, color: theme.primary },
+                { icon: Bug, label: 'Desparasitación', count: dewormingMeds.length, color: '#E8913A' },
+                { icon: Pill, label: 'Medicamentos', count: generalMeds.length, color: '#4D91C6' },
+              ].map((item, i) => (
+                <motion.div
+                  key={item.label}
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="rounded-2xl p-3 text-center"
+                  style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
+                >
+                  <div className="w-8 h-8 rounded-xl mx-auto mb-1.5 flex items-center justify-center" style={{ background: `${item.color}12` }}>
+                    <item.icon size={16} color={item.color} />
+                  </div>
+                  <p className="text-lg font-bold leading-none" style={{ color: theme.text }}>{item.count}</p>
+                  <p className="text-[9px] font-semibold mt-0.5" style={{ color: theme.textMuted }}>{item.label}</p>
+                </motion.div>
+              ))}
             </div>
+
+            {/* Upcoming reminders widget */}
+            {(() => {
+              const upcoming = [
+                ...vaxRecords.filter(r => r.next_dose_date && getDaysUntil(r.next_dose_date)! >= 0).map(r => ({
+                  name: (r.vaccine as any)?.name || 'Vacuna',
+                  type: 'vaccine' as const,
+                  daysLeft: getDaysUntil(r.next_dose_date)!,
+                  date: r.next_dose_date!,
+                  color: theme.primary,
+                  icon: Syringe,
+                })),
+                ...medications.filter(m => m.next_dose_date && getDaysUntil(m.next_dose_date)! >= 0).map(m => ({
+                  name: m.name,
+                  type: m.type === 'antiparasitario' ? 'deworming' as const : 'medication' as const,
+                  daysLeft: getDaysUntil(m.next_dose_date)!,
+                  date: m.next_dose_date!,
+                  color: m.type === 'antiparasitario' ? '#E8913A' : '#4D91C6',
+                  icon: m.type === 'antiparasitario' ? Bug : Pill,
+                })),
+              ].sort((a, b) => a.daysLeft - b.daysLeft).slice(0, 3)
+
+              if (upcoming.length === 0) return null
+              return (
+                <motion.div
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.15 }}
+                  className="rounded-2xl p-4"
+                  style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <Clock size={14} color={theme.accent} />
+                    <p className="text-xs font-bold" style={{ color: theme.text }}>Próximos recordatorios</p>
+                  </div>
+                  <div className="space-y-2.5">
+                    {upcoming.map((item, i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${item.color}12` }}>
+                          <item.icon size={14} color={item.color} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold truncate" style={{ color: theme.text }}>{item.name}</p>
+                          <p className="text-[10px]" style={{ color: theme.textMuted }}>
+                            {new Date(item.date).toLocaleDateString('es', { day: 'numeric', month: 'short' })}
+                          </p>
+                        </div>
+                        <span className="text-[11px] font-bold px-2.5 py-1 rounded-full flex-shrink-0" style={{
+                          background: item.daysLeft <= 7 ? '#F0A62B15' : '#2E9D6815',
+                          color: item.daysLeft <= 7 ? '#F0A62B' : '#2E9D68',
+                        }}>
+                          {item.daysLeft === 0 ? 'Hoy' : `En ${item.daysLeft}d`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )
+            })()}
+
+            {/* Unified register button */}
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setShowRegisterMenu(true)}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold"
+              style={{ background: theme.primary, color: '#fff', boxShadow: `0 4px 14px ${theme.primary}30` }}
+            >
+              <Plus size={16} />
+              Registrar información
+            </motion.button>
 
             {/* Add vaccine form */}
             <AnimatePresence>
@@ -568,7 +656,12 @@ export default function PetProfilePage() {
                   className="overflow-hidden"
                 >
                   <div className="rounded-2xl p-4 space-y-3" style={{ background: theme.bgCard, border: `1px solid ${theme.primary}30` }}>
-                    <p className="text-sm font-bold" style={{ color: theme.text }}>Agregar vacuna</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold" style={{ color: theme.text }}>Agregar vacuna</p>
+                      <button onClick={() => { setShowAddVax(false); setRegisterType(null) }}>
+                        <X size={16} color={theme.textMuted} />
+                      </button>
+                    </div>
                     <select
                       value={vaxFormVaccineId}
                       onChange={e => setVaxFormVaccineId(e.target.value)}
@@ -613,9 +706,9 @@ export default function PetProfilePage() {
               )}
             </AnimatePresence>
 
-            {/* Add medication form */}
+            {/* Add deworming form */}
             <AnimatePresence>
-              {showAddMed && (
+              {registerType === 'deworming' && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
@@ -623,9 +716,13 @@ export default function PetProfilePage() {
                   transition={{ duration: 0.3 }}
                   className="overflow-hidden"
                 >
-                  <div className="rounded-2xl p-4 space-y-3" style={{ background: theme.bgCard, border: `1px solid #4D91C630` }}>
-                    <p className="text-sm font-bold" style={{ color: theme.text }}>Agregar medicamento</p>
-                    {/* Preset pills */}
+                  <div className="rounded-2xl p-4 space-y-3" style={{ background: theme.bgCard, border: `1px solid #E8913A30` }}>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold" style={{ color: theme.text }}>Agregar desparasitación</p>
+                      <button onClick={() => { setRegisterType(null); setShowAddMed(false) }}>
+                        <X size={16} color={theme.textMuted} />
+                      </button>
+                    </div>
                     <div className="flex flex-wrap gap-1.5">
                       {medicationPresets.map(p => (
                         <button
@@ -637,91 +734,102 @@ export default function PetProfilePage() {
                           }}
                           className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
                           style={{
-                            background: medFormPreset === p.name ? '#4D91C6' : '#4D91C612',
-                            color: medFormPreset === p.name ? '#fff' : '#4D91C6',
-                            border: `1px solid ${medFormPreset === p.name ? '#4D91C6' : '#4D91C630'}`,
+                            background: medFormPreset === p.name ? '#E8913A' : '#E8913A12',
+                            color: medFormPreset === p.name ? '#fff' : '#E8913A',
+                            border: `1px solid ${medFormPreset === p.name ? '#E8913A' : '#E8913A30'}`,
                           }}
                         >
                           {p.name} {p.duration > 0 && `(${p.duration}d)`}
                         </button>
                       ))}
                     </div>
-                    {/* Custom name if no preset selected */}
-                    {!medFormPreset && (
-                      <input
-                        type="text"
-                        value={medFormCustomName}
-                        onChange={e => setMedFormCustomName(e.target.value)}
-                        placeholder="Nombre del medicamento"
-                        className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
-                        style={{ color: theme.text, border: `1px solid ${theme.border}`, background: theme.bg }}
-                      />
-                    )}
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="text-[10px] font-medium mb-1 block" style={{ color: theme.textMuted }}>Fecha aplicación</label>
-                        <input
-                          type="date"
-                          value={medFormDate}
-                          onChange={e => setMedFormDate(e.target.value)}
+                        <input type="date" value={medFormDate} onChange={e => setMedFormDate(e.target.value)}
                           className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
-                          style={{ color: theme.text, border: `1px solid ${theme.border}`, background: theme.bg }}
-                        />
+                          style={{ color: theme.text, border: `1px solid ${theme.border}`, background: theme.bg }} />
                       </div>
                       <div>
                         <label className="text-[10px] font-medium mb-1 block" style={{ color: theme.textMuted }}>Duración (días)</label>
-                        <input
-                          type="number"
-                          value={medFormDuration}
-                          onChange={e => setMedFormDuration(e.target.value ? parseInt(e.target.value) : '')}
-                          placeholder="Ej: 90"
-                          className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
-                          style={{ color: theme.text, border: `1px solid ${theme.border}`, background: theme.bg }}
-                        />
+                        <input type="number" value={medFormDuration} onChange={e => setMedFormDuration(e.target.value ? parseInt(e.target.value) : '')}
+                          placeholder="Ej: 90" className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
+                          style={{ color: theme.text, border: `1px solid ${theme.border}`, background: theme.bg }} />
                       </div>
                     </div>
-                    <input
-                      type="text"
-                      value={medFormNotes}
-                      onChange={e => setMedFormNotes(e.target.value)}
-                      placeholder="Notas (opcional)"
-                      className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
-                      style={{ color: theme.text, border: `1px solid ${theme.border}`, background: theme.bg }}
-                    />
+                    <input type="text" value={medFormNotes} onChange={e => setMedFormNotes(e.target.value)}
+                      placeholder="Notas (opcional)" className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
+                      style={{ color: theme.text, border: `1px solid ${theme.border}`, background: theme.bg }} />
                     {medFormDuration && medFormDate && (
-                      <div className="flex items-center gap-2 text-xs px-1" style={{ color: '#4D91C6' }}>
+                      <div className="flex items-center gap-2 text-xs px-1" style={{ color: '#E8913A' }}>
                         <Clock size={14} />
-                        <span>
-                          Próxima dosis: {new Date(new Date(medFormDate).getTime() + Number(medFormDuration) * 86400000).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}
-                        </span>
+                        <span>Próxima dosis: {new Date(new Date(medFormDate).getTime() + Number(medFormDuration) * 86400000).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                       </div>
                     )}
-                    <motion.button
-                      whileTap={{ scale: 0.97 }}
-                      onClick={submitMedication}
-                      disabled={(!medFormPreset && !medFormCustomName.trim()) || medSubmitting}
+                    <motion.button whileTap={{ scale: 0.97 }} onClick={submitMedication}
+                      disabled={!medFormPreset || medSubmitting}
                       className="w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50"
-                      style={{ background: '#4D91C6', color: '#fff' }}
-                    >
-                      {medSubmitting ? 'Guardando...' : 'Agregar medicamento'}
+                      style={{ background: '#E8913A', color: '#fff' }}>
+                      {medSubmitting ? 'Guardando...' : 'Agregar desparasitación'}
                     </motion.button>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Next vaccine alert */}
-            {nextVaccine && (
-              <div className="rounded-2xl p-4" style={{ background: `${theme.accent}12`, border: `1px solid ${theme.accent}30` }}>
-                <p className="text-xs font-semibold mb-1" style={{ color: theme.accent }}>Próxima vacuna</p>
-                <p className="font-bold text-sm" style={{ color: theme.text }}>
-                  {(nextVaccine.vaccine as any)?.name}
-                </p>
-                <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
-                  {new Date(nextVaccine.next_dose_date!).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}
-                </p>
-              </div>
-            )}
+            {/* Add medication form (general, non-antiparasitario) */}
+            <AnimatePresence>
+              {registerType === 'medication' && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <div className="rounded-2xl p-4 space-y-3" style={{ background: theme.bgCard, border: `1px solid #4D91C630` }}>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold" style={{ color: theme.text }}>Agregar medicamento</p>
+                      <button onClick={() => { setRegisterType(null); setShowAddMed(false) }}>
+                        <X size={16} color={theme.textMuted} />
+                      </button>
+                    </div>
+                    <input type="text" value={medFormCustomName} onChange={e => setMedFormCustomName(e.target.value)}
+                      placeholder="Nombre del medicamento" className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
+                      style={{ color: theme.text, border: `1px solid ${theme.border}`, background: theme.bg }} />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-medium mb-1 block" style={{ color: theme.textMuted }}>Fecha aplicación</label>
+                        <input type="date" value={medFormDate} onChange={e => setMedFormDate(e.target.value)}
+                          className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
+                          style={{ color: theme.text, border: `1px solid ${theme.border}`, background: theme.bg }} />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-medium mb-1 block" style={{ color: theme.textMuted }}>Duración (días)</label>
+                        <input type="number" value={medFormDuration} onChange={e => setMedFormDuration(e.target.value ? parseInt(e.target.value) : '')}
+                          placeholder="Ej: 30" className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
+                          style={{ color: theme.text, border: `1px solid ${theme.border}`, background: theme.bg }} />
+                      </div>
+                    </div>
+                    <input type="text" value={medFormNotes} onChange={e => setMedFormNotes(e.target.value)}
+                      placeholder="Notas (opcional)" className="w-full text-sm bg-transparent outline-none px-3 py-2.5 rounded-xl"
+                      style={{ color: theme.text, border: `1px solid ${theme.border}`, background: theme.bg }} />
+                    {medFormDuration && medFormDate && (
+                      <div className="flex items-center gap-2 text-xs px-1" style={{ color: '#4D91C6' }}>
+                        <Clock size={14} />
+                        <span>Próxima dosis: {new Date(new Date(medFormDate).getTime() + Number(medFormDuration) * 86400000).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                      </div>
+                    )}
+                    <motion.button whileTap={{ scale: 0.97 }} onClick={submitMedication}
+                      disabled={!medFormCustomName.trim() || medSubmitting}
+                      className="w-full py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50"
+                      style={{ background: '#4D91C6', color: '#fff' }}>
+                      {medSubmitting ? 'Guardando...' : 'Agregar medicamento'}
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* === Vaccines section === */}
             <div className="flex items-center gap-2 pt-1">
@@ -737,98 +845,140 @@ export default function PetProfilePage() {
                 <Syringe size={28} color={theme.textMuted} className="mx-auto mb-2" />
                 <p className="font-semibold text-sm" style={{ color: theme.text }}>Sin vacunas registradas</p>
                 <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
-                  Agrega vacunas manualmente o tu veterinario las registrará
+                  Agrega vacunas con el botón &quot;Registrar información&quot;
                 </p>
               </div>
             ) : (
-              vaxRecords.map((r, i) => (
-                <motion.div key={r.id} initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.05 }}
-                  className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="font-semibold text-sm" style={{ color: theme.text }}>
-                      {(r.vaccine as any)?.name || 'Vacuna'}
+              vaxRecords.map((r, i) => {
+                const status = getHealthStatus(r.next_dose_date)
+                return (
+                  <motion.div key={r.id} initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.05 }}
+                    className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-semibold text-sm" style={{ color: theme.text }}>
+                        {(r.vaccine as any)?.name || 'Vacuna'}
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                          style={{ background: status.bg, color: status.color }}>
+                          {status.label}
+                        </span>
+                        {r.is_verified ? (
+                          <ShieldCheck size={14} color="#2E9D68" />
+                        ) : (
+                          <ShieldAlert size={14} color="#D94B5B" />
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-xs" style={{ color: theme.textMuted }}>
+                      Aplicada: {new Date(r.date_administered).toLocaleDateString('es')}
                     </p>
-                    {r.is_verified ? (
-                      <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold"
-                        style={{ background: '#2E9D6815', color: '#2E9D68' }}>
-                        <ShieldCheck size={12} /> Verificada
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold"
-                        style={{ background: '#D94B5B15', color: '#D94B5B' }}>
-                        <ShieldAlert size={12} /> No verificada
-                      </span>
+                    {r.next_dose_date && (
+                      <p className="text-xs mt-0.5" style={{ color: status.color }}>
+                        Próxima: {new Date(r.next_dose_date).toLocaleDateString('es')}
+                      </p>
                     )}
-                  </div>
-                  <p className="text-xs" style={{ color: theme.textMuted }}>
-                    Aplicada: {new Date(r.date_administered).toLocaleDateString('es')}
-                  </p>
-                  {r.next_dose_date && (
-                    <p className="text-xs mt-0.5" style={{ color: theme.accent }}>
-                      Próxima: {new Date(r.next_dose_date).toLocaleDateString('es')}
-                    </p>
-                  )}
-                </motion.div>
-              ))
+                  </motion.div>
+                )
+              })
             )}
 
-            {/* === Medications section === */}
+            {/* === Deworming section === */}
             <div className="flex items-center gap-2 pt-3 mt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
-              <Pill size={15} color="#4D91C6" />
-              <h3 className="font-bold text-sm" style={{ color: theme.text }}>Medicamentos</h3>
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: '#4D91C612', color: theme.textMuted }}>
-                {medications.length}
+              <Bug size={15} color="#E8913A" />
+              <h3 className="font-bold text-sm" style={{ color: theme.text }}>Desparasitación</h3>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: '#E8913A12', color: theme.textMuted }}>
+                {dewormingMeds.length}
               </span>
             </div>
 
-            {medications.length === 0 ? (
+            {dewormingMeds.length === 0 ? (
               <div className="rounded-2xl p-6 text-center" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
-                <Pill size={28} color={theme.textMuted} className="mx-auto mb-2" />
-                <p className="font-semibold text-sm" style={{ color: theme.text }}>Sin medicamentos registrados</p>
+                <Bug size={28} color={theme.textMuted} className="mx-auto mb-2" />
+                <p className="font-semibold text-sm" style={{ color: theme.text }}>Sin desparasitación registrada</p>
                 <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
-                  Registra medicamentos como Bravecto, NexGard, etc.
+                  Registra productos como Bravecto, NexGard, etc.
                 </p>
               </div>
             ) : (
-              medications.map((m, i) => {
+              dewormingMeds.map((m, i) => {
                 const daysLeft = getDaysUntil(m.next_dose_date)
-                const isOverdue = daysLeft !== null && daysLeft < 0
-                const isSoon = daysLeft !== null && daysLeft >= 0 && daysLeft <= 7
+                const status = getHealthStatus(m.next_dose_date)
                 return (
                   <motion.div key={m.id} initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.05 }}
                     className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
                     <div className="flex items-center justify-between mb-1">
                       <p className="font-semibold text-sm" style={{ color: theme.text }}>{m.name}</p>
-                      {m.duration_days && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                          style={{ background: '#4D91C612', color: '#4D91C6' }}>
-                          {m.duration_days} días
-                        </span>
-                      )}
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                        style={{ background: status.bg, color: status.color }}>
+                        {status.label}
+                      </span>
                     </div>
                     <p className="text-xs" style={{ color: theme.textMuted }}>
                       Aplicado: {new Date(m.applied_date).toLocaleDateString('es')}
                     </p>
-                    {m.next_dose_date && (
+                    {m.next_dose_date && daysLeft !== null && (
                       <div className="flex items-center gap-1.5 mt-1.5">
-                        <Clock size={12} color={isOverdue ? '#D94B5B' : isSoon ? '#F0A62B' : '#2E9D68'} />
-                        <p className="text-xs font-semibold" style={{
-                          color: isOverdue ? '#D94B5B' : isSoon ? '#F0A62B' : '#2E9D68'
-                        }}>
-                          {isOverdue
-                            ? `Vencido hace ${Math.abs(daysLeft!)} días`
-                            : daysLeft === 0
-                              ? 'Hoy toca la próxima dosis'
-                              : `Próxima dosis en ${daysLeft} día${daysLeft !== 1 ? 's' : ''}`
-                          }
-                          {' · '}
-                          {new Date(m.next_dose_date).toLocaleDateString('es', { day: 'numeric', month: 'short' })}
+                        <Clock size={12} color={status.color} />
+                        <p className="text-xs font-semibold" style={{ color: status.color }}>
+                          {daysLeft < 0
+                            ? `Vencido hace ${Math.abs(daysLeft)} días`
+                            : daysLeft === 0 ? 'Hoy toca la próxima dosis'
+                            : `Próxima dosis en ${daysLeft} día${daysLeft !== 1 ? 's' : ''}`}
                         </p>
                       </div>
                     )}
-                    {m.notes && (
-                      <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{m.notes}</p>
+                  </motion.div>
+                )
+              })
+            )}
+
+            {/* === General medications section === */}
+            <div className="flex items-center gap-2 pt-3 mt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
+              <Pill size={15} color="#4D91C6" />
+              <h3 className="font-bold text-sm" style={{ color: theme.text }}>Medicamentos</h3>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: '#4D91C612', color: theme.textMuted }}>
+                {generalMeds.length}
+              </span>
+            </div>
+
+            {generalMeds.length === 0 ? (
+              <div className="rounded-2xl p-6 text-center" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
+                <Pill size={28} color={theme.textMuted} className="mx-auto mb-2" />
+                <p className="font-semibold text-sm" style={{ color: theme.text }}>Sin medicamentos registrados</p>
+                <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+                  Registra medicamentos generales
+                </p>
+              </div>
+            ) : (
+              generalMeds.map((m, i) => {
+                const daysLeft = getDaysUntil(m.next_dose_date)
+                const status = getHealthStatus(m.next_dose_date)
+                return (
+                  <motion.div key={m.id} initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.05 }}
+                    className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="font-semibold text-sm" style={{ color: theme.text }}>{m.name}</p>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                        style={{ background: status.bg, color: status.color }}>
+                        {status.label}
+                      </span>
+                    </div>
+                    <p className="text-xs" style={{ color: theme.textMuted }}>
+                      Aplicado: {new Date(m.applied_date).toLocaleDateString('es')}
+                    </p>
+                    {m.next_dose_date && daysLeft !== null && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <Clock size={12} color={status.color} />
+                        <p className="text-xs font-semibold" style={{ color: status.color }}>
+                          {daysLeft < 0
+                            ? `Vencido hace ${Math.abs(daysLeft)} días`
+                            : daysLeft === 0 ? 'Hoy toca la próxima dosis'
+                            : `Próxima dosis en ${daysLeft} día${daysLeft !== 1 ? 's' : ''}`}
+                        </p>
+                      </div>
                     )}
+                    {m.notes && <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{m.notes}</p>}
                   </motion.div>
                 )
               })
@@ -836,9 +986,141 @@ export default function PetProfilePage() {
           </div>
         )}
 
-        {/* Adventures tab — Instagram-style posts */}
+        {/* Historial tab — unified treatment timeline + adventures */}
         {tab === 'history' && (
           <div className="space-y-4">
+            {/* Unified treatment history */}
+            {(() => {
+              const allRecords = [
+                ...vaxRecords.map(r => ({
+                  id: `vax-${r.id}`,
+                  name: (r.vaccine as any)?.name || 'Vacuna',
+                  type: 'vaccine' as const,
+                  date: r.date_administered,
+                  nextDate: r.next_dose_date,
+                  notes: null as string | null,
+                  verified: r.is_verified,
+                  icon: Syringe,
+                  color: theme.primary,
+                  typeLabel: 'Vacuna',
+                })),
+                ...dewormingMeds.map(m => ({
+                  id: `dew-${m.id}`,
+                  name: m.name,
+                  type: 'deworming' as const,
+                  date: m.applied_date,
+                  nextDate: m.next_dose_date,
+                  notes: m.notes,
+                  verified: false,
+                  icon: Bug,
+                  color: '#E8913A',
+                  typeLabel: 'Desparasitación',
+                })),
+                ...generalMeds.map(m => ({
+                  id: `med-${m.id}`,
+                  name: m.name,
+                  type: 'medication' as const,
+                  date: m.applied_date,
+                  nextDate: m.next_dose_date,
+                  notes: m.notes,
+                  verified: false,
+                  icon: Pill,
+                  color: '#4D91C6',
+                  typeLabel: 'Medicamento',
+                })),
+              ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+              return allRecords.length === 0 ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-2xl p-8 text-center"
+                  style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
+                >
+                  <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+                    style={{ background: theme.primaryLight }}>
+                    <ClipboardList size={28} color={theme.primary} strokeWidth={1.5} />
+                  </div>
+                  <p className="font-bold text-sm mb-1" style={{ color: theme.text }}>Sin registros aún</p>
+                  <p className="text-xs" style={{ color: theme.textMuted }}>
+                    Los tratamientos que registres aparecerán aquí organizados cronológicamente
+                  </p>
+                </motion.div>
+              ) : (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between px-1">
+                    <h3 className="font-bold text-sm" style={{ color: theme.text }}>
+                      Línea de tiempo
+                    </h3>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                      style={{ background: theme.primaryLight, color: theme.textMuted }}>
+                      {allRecords.length} registro{allRecords.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  {allRecords.map((rec, i) => {
+                    const status = getHealthStatus(rec.nextDate)
+                    const RecIcon = rec.icon
+                    return (
+                      <motion.div
+                        key={rec.id}
+                        initial={{ x: -10, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: i * 0.04 }}
+                        className="rounded-2xl p-4 flex gap-3.5"
+                        style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
+                      >
+                        {/* Icon column */}
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+                          style={{ background: `${rec.color}12` }}
+                        >
+                          <RecIcon size={18} color={rec.color} strokeWidth={1.8} />
+                        </div>
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider"
+                              style={{ background: `${rec.color}15`, color: rec.color }}>
+                              {rec.typeLabel}
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                              style={{ background: status.bg, color: status.color }}>
+                              {status.label}
+                            </span>
+                            {rec.verified && <ShieldCheck size={13} color="#2E9D68" />}
+                          </div>
+                          <p className="font-semibold text-sm truncate" style={{ color: theme.text }}>{rec.name}</p>
+                          <p className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>
+                            {new Date(rec.date).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          </p>
+                          {rec.nextDate && (
+                            <div className="flex items-center gap-1.5 mt-1.5">
+                              <Clock size={11} color={status.color} />
+                              <p className="text-[11px] font-medium" style={{ color: status.color }}>
+                                Próxima: {new Date(rec.nextDate).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              </p>
+                            </div>
+                          )}
+                          {rec.notes && (
+                            <p className="text-[11px] mt-1 truncate" style={{ color: theme.textMuted }}>{rec.notes}</p>
+                          )}
+                        </div>
+                      </motion.div>
+                    )
+                  })}
+                </div>
+              )
+            })()}
+
+            {/* Adventures section — separated by divider */}
+            <div className="flex items-center gap-2 pt-3 mt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
+              <Compass size={15} color={theme.primary} />
+              <h3 className="font-bold text-sm" style={{ color: theme.text }}>Aventuras</h3>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: theme.primaryLight, color: theme.textMuted }}>
+                {adventurePhotos.length}
+              </span>
+            </div>
+
             {/* Add adventure button */}
             {adventurePhotos.length < 30 && (
               <motion.button
@@ -846,7 +1128,7 @@ export default function PetProfilePage() {
                 onClick={() => adventurePhotoRef.current?.click()}
                 disabled={uploadingAdventure}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold disabled:opacity-50"
-                style={{ background: theme.primary, color: '#fff', boxShadow: '0 4px 14px rgba(255,107,107,0.25)' }}
+                style={{ background: theme.primaryLight, color: theme.primary, border: `1.5px dashed ${theme.primary}40` }}
               >
                 <Camera size={16} />
                 Agregar aventura
@@ -886,51 +1168,14 @@ export default function PetProfilePage() {
               )}
             </AnimatePresence>
 
-            {/* Empty state */}
+            {/* Adventure photos feed */}
             {adventurePhotos.length === 0 && !showCaptionInput ? (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl p-8 text-center"
-                style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
-              >
-                <motion.div
-                  animate={{ y: [0, -8, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                  className="mb-4"
-                >
-                  <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center"
-                    style={{ background: theme.primaryLight }}>
-                    <Compass size={32} color={theme.primary} strokeWidth={1.5} />
-                  </div>
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <p className="font-bold text-base mb-1" style={{ color: theme.text }}>
-                    {pet.name} quiere aventuras
-                  </p>
-                  <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>
-                    {ownerSex === 'female' ? 'Mamá' : 'Papá'}, agrega un recuerdo de nuestras aventuras juntos
-                  </p>
-                </motion.div>
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => adventurePhotoRef.current?.click()}
-                  className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold"
-                  style={{ background: theme.primary, color: '#fff' }}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                >
-                  <Camera size={16} />
-                  Primera aventura
-                </motion.button>
-              </motion.div>
+              <div className="rounded-2xl p-6 text-center" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
+                <p className="text-xs" style={{ color: theme.textMuted }}>
+                  Comparte fotos de las aventuras de {pet?.name || 'tu mascota'} 📸
+                </p>
+              </div>
             ) : (
-              /* Instagram-style post feed */
               <div className="space-y-4">
                 {adventurePhotos.map((photo, i) => (
                   <motion.div
@@ -941,7 +1186,6 @@ export default function PetProfilePage() {
                     className="rounded-2xl overflow-hidden"
                     style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
                   >
-                    {/* Post header — pet avatar + date */}
                     <div className="flex items-center justify-between px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0"
@@ -969,13 +1213,9 @@ export default function PetProfilePage() {
                         <MapPin size={12} color={theme.primary} />
                       </button>
                     </div>
-
-                    {/* Post image — full width */}
                     <button onClick={() => setViewingPhoto(photo)} className="w-full">
                       <img src={photo.photo_url} alt={photo.caption || ''} className="w-full aspect-[4/3] object-cover" />
                     </button>
-
-                    {/* Post caption */}
                     {photo.caption && (
                       <div className="px-4 py-3">
                         <p className="text-sm" style={{ color: theme.text }}>
@@ -984,8 +1224,6 @@ export default function PetProfilePage() {
                         </p>
                       </div>
                     )}
-
-                    {/* Post footer — time ago */}
                     <div className="px-4 pb-3">
                       <p className="text-[10px] uppercase tracking-wider" style={{ color: theme.textMuted }}>
                         {(() => {
@@ -1265,6 +1503,81 @@ export default function PetProfilePage() {
               {viewingPhoto.caption && <p className="text-white text-sm mt-3 text-center">{viewingPhoto.caption}</p>}
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Register type selector bottom sheet */}
+      <AnimatePresence>
+        {showRegisterMenu && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[90]"
+              style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
+              onClick={() => setShowRegisterMenu(false)}
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="fixed bottom-0 left-0 right-0 z-[91] rounded-t-3xl safe-bottom"
+              style={{ background: theme.bgCard }}
+            >
+              <div className="p-6 pb-8">
+                <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: theme.border }} />
+                <h3 className="text-base font-bold text-center mb-1" style={{ color: theme.text }}>
+                  Registrar información
+                </h3>
+                <p className="text-xs text-center mb-5" style={{ color: theme.textMuted }}>
+                  ¿Qué deseas registrar para {pet?.name || 'tu mascota'}?
+                </p>
+                <div className="space-y-2.5">
+                  {[
+                    { type: 'vaccine' as const, icon: Syringe, label: 'Vacuna', sub: 'Registra una nueva vacuna aplicada', color: theme.primary },
+                    { type: 'deworming' as const, icon: Bug, label: 'Desparasitación', sub: 'Bravecto, NexGard, Simparica...', color: '#E8913A' },
+                    { type: 'medication' as const, icon: Pill, label: 'Medicamento', sub: 'Medicamentos generales', color: '#4D91C6' },
+                  ].map(opt => (
+                    <motion.button
+                      key={opt.type}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => {
+                        setShowRegisterMenu(false)
+                        if (opt.type === 'vaccine') {
+                          setShowAddVax(true)
+                        } else {
+                          setRegisterType(opt.type)
+                        }
+                      }}
+                      className="w-full flex items-center gap-4 p-4 rounded-2xl text-left"
+                      style={{ background: theme.bg, border: `1px solid ${theme.border}` }}
+                    >
+                      <div
+                        className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ background: `${opt.color}12` }}
+                      >
+                        <opt.icon size={22} color={opt.color} strokeWidth={1.8} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold" style={{ color: theme.text }}>{opt.label}</p>
+                        <p className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>{opt.sub}</p>
+                      </div>
+                      <ChevronRight size={16} color={theme.textMuted} className="opacity-40" />
+                    </motion.button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setShowRegisterMenu(false)}
+                  className="w-full py-3 mt-4 text-sm font-medium"
+                  style={{ color: theme.textMuted }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
