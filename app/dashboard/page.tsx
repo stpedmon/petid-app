@@ -29,9 +29,9 @@ interface UpcomingVax {
   vaccine: { name: string }
 }
 
-const PET_THOUGHTS = [
+// Thoughts filtered by owner gender at render time
+const PET_THOUGHTS_MALE = [
   '¡Hola papá! 🐾',
-  '¡Hola mamá! 🐾',
   'Gracias por cuidarme 💕',
   '¡Te quiero mucho! 🐾',
   '¿Hoy hay paseo? 🐶',
@@ -40,9 +40,34 @@ const PET_THOUGHTS = [
   '¡Soy feliz contigo! 🐾',
   '¿Me rascas la panza? 🐕',
   'Te esperé todo el día 🥺',
-  '¡Vamos al parque! 🌳',
-  '¡Soy un buen chico! ⭐',
+  '¿Me llevas al parque? 🌳',
+  '¡Soy tu consentido! ⭐',
+  '¡Papi, te extrañé! 🐶',
+  '¡Un snack porfa! 🦴',
+  '¡Eres mi humano favorito! 💛',
+  '¡Paseo! ¡Paseo! 🐕‍🦺',
 ]
+
+const PET_THOUGHTS_FEMALE = [
+  '¡Hola mamá! 🐾',
+  'Gracias por cuidarme 💕',
+  '¡Te quiero mucho! 🐾',
+  '¿Hoy hay paseo? 🐶',
+  '¡Eres la mejor! 💛',
+  'Dame croquetas 🍖',
+  '¡Soy feliz contigo! 🐾',
+  '¿Me rascas la panza? 🐕',
+  'Te esperé todo el día 🥺',
+  '¿Me llevas al parque? 🌳',
+  '¡Soy tu consentido! ⭐',
+  '¡Mami, te extrañé! 🐶',
+  '¡Un snack porfa! 🦴',
+  '¡Eres mi humana favorita! 💛',
+  '¡Paseo! ¡Paseo! 🐕‍🦺',
+]
+
+// Common Spanish female name endings/patterns
+const FEMALE_NAMES = /^(ana|maria|mar[ií]a|carmen|rosa|laura|lucia|luc[ií]a|andrea|sara|paula|diana|elena|sandra|patricia|claudia|monica|m[oó]nica|carolina|valentina|daniela|gabriela|isabella|camila|natalia|alejandra|fernanda|sofia|sof[ií]a|victoria|juliana|angela|[aá]ngela|adriana|catalina|melissa|karen|paola|lorena|mariana|viviana|johana|tatiana|marcela|silvia|cecilia|gloria|martha|marta|irene|teresa|pilar|olga|alicia|nora|sonia|patricia|susana|julia|eva|isabel|lina|milena|vanessa|jessica|jennifer|stephanie|estefan[ií]a|stephanie|yesenia|karla|carla|giselle|nicole|valeria|jimena|ximena|bianca|blanca|veronica|ver[oó]nica|elizabeth)$/i
 
 export default function DashboardPage() {
   const { user, userRole, userAvatarUrl, loading: authLoading } = useAuth()
@@ -54,16 +79,26 @@ export default function DashboardPage() {
   const [userName, setUserName] = useState('')
   const [showPhotoPrompt, setShowPhotoPrompt] = useState(false)
   const [thoughtIndex, setThoughtIndex] = useState(0)
+  const [petThoughts, setPetThoughts] = useState<string[]>(PET_THOUGHTS_MALE)
 
-  // Rotate pet thoughts every 4 seconds
+  // Determine gender from first name and set appropriate thoughts
   useEffect(() => {
-    const startIndex = Math.floor(Math.random() * PET_THOUGHTS.length)
+    if (userName) {
+      const first = userName.split(' ')[0]
+      const isFemale = FEMALE_NAMES.test(first) || (first.length > 2 && first.endsWith('a') && !/(luca|borja|joshua|josua|isa[ií]as|el[ií]as|mat[ií]as|nicolas|nicol[aá]s|andr[eé]s|tom[aá]s|lucas|jonas|tobias|tob[ií]as|bautista)$/i.test(first))
+      setPetThoughts(isFemale ? PET_THOUGHTS_FEMALE : PET_THOUGHTS_MALE)
+    }
+  }, [userName])
+
+  // Rotate pet thoughts every 7 seconds (slower)
+  useEffect(() => {
+    const startIndex = Math.floor(Math.random() * petThoughts.length)
     setThoughtIndex(startIndex)
     const interval = setInterval(() => {
-      setThoughtIndex(prev => (prev + 1) % PET_THOUGHTS.length)
-    }, 4000)
+      setThoughtIndex(prev => (prev + 1) % petThoughts.length)
+    }, 7000)
     return () => clearInterval(interval)
-  }, [])
+  }, [petThoughts])
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -204,7 +239,7 @@ export default function DashboardPage() {
                             boxShadow: `0 2px 8px ${theme.primary}10`,
                           }}
                         >
-                          {PET_THOUGHTS[thoughtIndex]}
+                          {petThoughts[thoughtIndex]}
                           {/* Thought bubble tail dots */}
                           <span
                             className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full"
