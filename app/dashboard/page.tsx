@@ -39,25 +39,22 @@ export default function DashboardPage() {
   const fetchData = async () => {
     // Get user name
     const { data: userData } = await supabase
-      .schema('petid' as any)
-      .from('users')
-      .select('name')
+      .from('petid_users')
+      .select('full_name')
       .eq('auth_id', user!.id)
       .single()
-    if (userData) setUserName(userData.name)
+    if (userData) setUserName(userData.full_name)
 
     // Get pets
     const { data: ownerData } = await supabase
-      .schema('petid' as any)
-      .from('pet_owners')
+      .from('petid_pet_owners')
       .select('pet_id')
       .eq('user_id', user!.id)
 
     if (ownerData && ownerData.length > 0) {
       const petIds = ownerData.map((o: any) => o.pet_id)
       const { data: petsData } = await supabase
-        .schema('petid' as any)
-        .from('pets')
+        .from('petid_pets')
         .select('*')
         .in('id', petIds)
       if (petsData) setPets(petsData)

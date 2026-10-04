@@ -72,8 +72,7 @@ export default function NewPetPage() {
 
       // Insert pet
       const { data: pet, error: petErr } = await supabase
-        .schema('petid' as any)
-        .from('pets')
+        .from('petid_pets')
         .insert({
           name: form.name,
           species: form.species,
@@ -94,15 +93,14 @@ export default function NewPetPage() {
 
       // Get petid user id
       const { data: petidUser } = await supabase
-        .schema('petid' as any)
-        .from('users')
+        .from('petid_users')
         .select('id')
         .eq('auth_id', user.id)
         .single()
 
       // Link owner to pet
       if (pet && petidUser) {
-        await supabase.schema('petid' as any).from('pet_owners').insert({
+        await supabase.from('petid_pet_owners').insert({
           pet_id: pet.id,
           user_id: petidUser.id,
           is_primary: true

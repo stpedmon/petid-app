@@ -29,7 +29,7 @@ export default function VaccinatePage() {
   })
 
   useEffect(() => {
-    supabase.schema('petid' as any).from('vaccines').select('*').then(({ data }) => {
+    supabase.from('petid_vaccines').select('*').then(({ data }) => {
       if (data) setVaccines(data)
     })
   }, [])
@@ -38,7 +38,7 @@ export default function VaccinatePage() {
     e.preventDefault()
     setSaving(true)
 
-    const { error } = await supabase.schema('petid' as any).from('vaccination_records').insert({
+    const { error } = await supabase.from('petid_vaccination_records').insert({
       pet_id: form.pet_id,
       vaccine_id: form.vaccine_id,
       applied_date: form.applied_date,

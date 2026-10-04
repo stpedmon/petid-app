@@ -39,16 +39,14 @@ export default function PetProfilePage() {
 
   const fetchPet = async () => {
     const { data } = await supabase
-      .schema('petid' as any)
-      .from('pets')
+      .from('petid_pets')
       .select('*')
       .eq('id', petId)
       .single()
     if (data) setPet(data)
 
     const { data: vax } = await supabase
-      .schema('petid' as any)
-      .from('vaccination_records')
+      .from('petid_vaccination_records')
       .select('*, vaccine:vaccine_id(name)')
       .eq('pet_id', petId)
       .order('applied_date', { ascending: false })

@@ -44,7 +44,7 @@ export default function LoginPage() {
 
         // Create user in petid.users
         if (data.user) {
-          await supabase.schema('petid' as any).from('users').insert({
+          await supabase.from('petid_users').insert({
             id: data.user.id,
             full_name: name,
             email,

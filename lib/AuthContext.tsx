@@ -29,8 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session.user)
         // Fetch role from petid.users
         const { data } = await supabase
-          .schema('petid' as any)
-          .from('users')
+          .from('petid_users')
           .select('role')
           .eq('id', session.user.id)
           .single()
@@ -44,8 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user || null)
       if (session?.user) {
         const { data } = await supabase
-          .schema('petid' as any)
-          .from('users')
+          .from('petid_users')
           .select('role')
           .eq('id', session.user.id)
           .single()

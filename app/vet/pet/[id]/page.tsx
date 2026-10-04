@@ -20,11 +20,11 @@ export default function VetPetPage() {
 
   const fetchData = async () => {
     const { data: petData } = await supabase
-      .schema('petid' as any).from('pets').select('*').eq('id', petId).single()
+      .from('petid_pets').select('*').eq('id', petId).single()
     if (petData) setPet(petData)
 
     const { data: vax } = await supabase
-      .schema('petid' as any).from('vaccination_records')
+      .from('petid_vaccination_records')
       .select('*, vaccine:vaccine_id(name)')
       .eq('pet_id', petId).order('applied_date', { ascending: false })
     if (vax) setRecords(vax)

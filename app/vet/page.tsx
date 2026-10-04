@@ -23,11 +23,11 @@ export default function VetDashboardPage() {
 
   const fetchStats = async () => {
     const { count: petCount } = await supabase
-      .schema('petid' as any).from('pets').select('*', { count: 'exact', head: true })
+      .from('petid_pets').select('*', { count: 'exact', head: true })
     const { count: vaxCount } = await supabase
-      .schema('petid' as any).from('vaccination_records').select('*', { count: 'exact', head: true })
+      .from('petid_vaccination_records').select('*', { count: 'exact', head: true })
     const { count: scanCount } = await supabase
-      .schema('petid' as any).from('qr_scans').select('*', { count: 'exact', head: true })
+      .from('petid_qr_scans').select('*', { count: 'exact', head: true })
     setStats({
       pets: petCount || 0,
       vaccines: vaxCount || 0,
@@ -41,8 +41,7 @@ export default function VetDashboardPage() {
     const term = searchTerm.trim()
 
     const { data } = await supabase
-      .schema('petid' as any)
-      .from('pets')
+      .from('petid_pets')
       .select('id, name, species, breed, photo_url, microchip_number')
       .or(`name.ilike.%${term}%,microchip_number.ilike.%${term}%,id.eq.${term.length === 36 ? term : '00000000-0000-0000-0000-000000000000'}`)
       .limit(10)

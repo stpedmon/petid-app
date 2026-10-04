@@ -11,7 +11,7 @@ interface Pet {
 }
 
 interface Owner {
-  name: string; phone: string | null;
+  full_name: string; phone: string | null;
 }
 
 export default function PublicPetPage() {
@@ -25,24 +25,24 @@ export default function PublicPetPage() {
   useEffect(() => {
     fetchPublicData()
     // Log QR scan
-    supabase.schema('petid' as any).from('qr_scans').insert({ pet_id: petId })
+    supabase.from('petid_qr_scans').insert({ pet_id: petId })
   }, [petId])
 
   const fetchPublicData = async () => {
     const { data: petData } = await supabase
-      .schema('petid' as any).from('pets').select('*').eq('id', petId).single()
+      .from('petid_pets').select('*').eq('id', petId).single()
     if (petData) setPet(petData)
 
     const { data: ownerLink } = await supabase
-      .schema('petid' as any).from('pet_owners').select('user_id').eq('pet_id', petId).eq('is_primary', true).single()
+      .from('petid_pet_owners').select('user_id').eq('pet_id', petId).eq('is_primary', true).single()
     if (ownerLink) {
       const { data: userData } = await supabase
-        .schema('petid' as any).from('users').select('name, phone').eq('id', ownerLink.user_id).single()
-      if (userData) setOwner(userData)
+        .from('petid_users').select('full_name, phone').eq('id', ownerLink.user_id).single()
+      if (userData) setOwner(userData as Owner)
     }
 
     const { data: vax } = await supabase
-      .schema('petid' as any).from('vaccination_records')
+      .from('petid_vaccination_records')
       .select('*, vaccine:vaccine_id(name)')
       .eq('pet_id', petId).order('applied_date', { ascending: false }).limit(5)
     if (vax) setVaccines(vax)
@@ -104,7 +104,7 @@ export default function PublicPetPage() {
         {/* Contact buttons - NO phone number visible, only action buttons */}
         {owner && (
           <div className="bg-white rounded-xl p-4">
-            <p className="text-sm text-gray-500 mb-3">Dueño: <strong className="text-gray-800">{owner.name}</strong></p>
+            <p className="text-sm text-gray-500 mb-3">Dueño: <strong className="text-gray-800">{owner.full_name}</strong></p>
             <div className="grid grid-cols-2 gap-3">
               {owner.phone && (
                 <>
