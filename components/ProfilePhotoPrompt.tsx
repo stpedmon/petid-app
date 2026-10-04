@@ -42,13 +42,18 @@ export default function ProfilePhotoPrompt({ show, onClose }: Props) {
 
       const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
       const filePath = `${user.id}/avatar.${ext}`
+      const mimeType = file.type || 'image/jpeg'
+
+      // Read file as ArrayBuffer to avoid mobile browser issues
+      const arrayBuffer = await file.arrayBuffer()
+      const blob = new Blob([arrayBuffer], { type: mimeType })
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, {
+        .upload(filePath, blob, {
           upsert: true,
-          contentType: file.type || 'image/jpeg',
+          contentType: mimeType,
         })
 
       if (uploadError) throw new Error(`Upload: ${uploadError.message}`)
