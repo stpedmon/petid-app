@@ -8,7 +8,7 @@ import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
 import ProfilePhotoPrompt from '@/components/ProfilePhotoPrompt'
 import { PlusCircle, ChevronRight, Syringe, QrCode, Camera, Calendar, PawPrint, AlertCircle, Bell } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,6 +29,21 @@ interface UpcomingVax {
   vaccine: { name: string }
 }
 
+const PET_THOUGHTS = [
+  '¡Hola papá! 🐾',
+  '¡Hola mamá! 🐾',
+  'Gracias por cuidarme 💕',
+  '¡Te quiero mucho! 🐾',
+  '¿Hoy hay paseo? 🐶',
+  '¡Eres el mejor! 💛',
+  'Dame croquetas 🍖',
+  '¡Soy feliz contigo! 🐾',
+  '¿Me rascas la panza? 🐕',
+  'Te esperé todo el día 🥺',
+  '¡Vamos al parque! 🌳',
+  '¡Soy un buen chico! ⭐',
+]
+
 export default function DashboardPage() {
   const { user, userRole, userAvatarUrl, loading: authLoading } = useAuth()
   const { theme } = useTheme()
@@ -38,6 +53,17 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [userName, setUserName] = useState('')
   const [showPhotoPrompt, setShowPhotoPrompt] = useState(false)
+  const [thoughtIndex, setThoughtIndex] = useState(0)
+
+  // Rotate pet thoughts every 4 seconds
+  useEffect(() => {
+    const startIndex = Math.floor(Math.random() * PET_THOUGHTS.length)
+    setThoughtIndex(startIndex)
+    const interval = setInterval(() => {
+      setThoughtIndex(prev => (prev + 1) % PET_THOUGHTS.length)
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -146,7 +172,7 @@ export default function DashboardPage() {
             transition={{ delay: 0.05 }}
             className="mb-5"
           >
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+            <div className="flex gap-4 overflow-x-auto pb-2 pt-10 scrollbar-hide">
               {/* Pet story circles */}
               {pets.map((pet, i) => (
                 <motion.button
@@ -156,8 +182,42 @@ export default function DashboardPage() {
                   transition={{ delay: 0.1 + i * 0.06 }}
                   whileTap={{ scale: 0.92 }}
                   onClick={() => router.push(`/pet/${pet.id}`)}
-                  className="flex flex-col items-center gap-1.5 flex-shrink-0"
+                  className="flex flex-col items-center gap-1.5 flex-shrink-0 relative"
                 >
+                  {/* Thought bubble — only on first pet */}
+                  {i === 0 && (
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={thoughtIndex}
+                        initial={{ opacity: 0, y: 4, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -4, scale: 0.9 }}
+                        transition={{ duration: 0.35 }}
+                        className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap z-10"
+                      >
+                        <div
+                          className="relative px-3 py-1.5 rounded-full text-[10px] font-semibold"
+                          style={{
+                            background: theme.bgCard,
+                            color: theme.text,
+                            border: `1px solid ${theme.border}`,
+                            boxShadow: `0 2px 8px ${theme.primary}10`,
+                          }}
+                        >
+                          {PET_THOUGHTS[thoughtIndex]}
+                          {/* Thought bubble tail dots */}
+                          <span
+                            className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full"
+                            style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
+                          />
+                          <span
+                            className="absolute -bottom-3.5 left-[calc(50%-2px)] w-1.5 h-1.5 rounded-full"
+                            style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
+                          />
+                        </div>
+                      </motion.div>
+                    </AnimatePresence>
+                  )}
                   <div
                     className="w-[68px] h-[68px] rounded-full p-[3px]"
                     style={{
