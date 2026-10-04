@@ -62,7 +62,7 @@ export default function TopBar({ title, compact }: { title?: string; compact?: b
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => router.push('/settings')}
-              className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0"
+              className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0"
               style={{
                 background: userAvatarUrl ? 'transparent' : theme.primaryLight,
                 border: `2px solid ${theme.primary}30`,
