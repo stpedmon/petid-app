@@ -143,7 +143,7 @@ export default function SettingsPage() {
             <motion.button
               whileTap={{ scale: 0.93 }}
               onClick={() => avatarInputRef.current?.click()}
-              className="relative w-16 h-16 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
+              className="relative w-20 h-20 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
               style={{
                 background: userAvatarUrl ? 'transparent' : `linear-gradient(135deg, ${theme.primaryLight}, ${theme.bg})`,
                 border: `2px solid ${theme.primary}30`,
@@ -152,13 +152,13 @@ export default function SettingsPage() {
               {userAvatarUrl ? (
                 <img src={userAvatarUrl} alt="Perfil" className="w-full h-full object-cover" />
               ) : (
-                <User size={24} color={theme.primary} />
+                <User size={28} color={theme.primary} />
               )}
               <div
-                className="absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center"
+                className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center"
                 style={{ background: theme.primary, border: `2px solid ${theme.bgCard}` }}
               >
-                <Camera size={10} color="#fff" />
+                <Camera size={12} color="#fff" />
               </div>
               {uploadingAvatar && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-full" style={{ background: 'rgba(0,0,0,0.4)' }}>
