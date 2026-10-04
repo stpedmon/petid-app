@@ -215,7 +215,7 @@ export default function NewPetPage() {
           microchip_number: microchip || null,
           photo_url,
           hobbies: selectedHobbies,
-          personality: selectedPersonality,
+          personality_tags: selectedPersonality,
         })
         .select('id')
         .single()
