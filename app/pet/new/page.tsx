@@ -416,13 +416,26 @@ export default function NewPetPage() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-6">
+                {/* Decorative header image */}
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+                  className="flex justify-center"
+                >
+                  <img
+                    src="/icons/pets-header.png"
+                    alt="Mascotas"
+                    className="w-32 h-32 object-contain"
+                  />
+                </motion.div>
+
+                <div className="grid grid-cols-2 gap-4">
                   {[
-                    { value: 'canine', label: 'Perro' },
-                    { value: 'feline', label: 'Gato' },
-                  ].map(({ value, label }) => {
+                    { value: 'canine', label: 'Perro', emoji: '🐕' },
+                    { value: 'feline', label: 'Gato', emoji: '🐈' },
+                  ].map(({ value, label, emoji }) => {
                     const selected = species === value
-                    const iconColor = selected ? '#fff' : theme.primary
                     return (
                       <motion.button
                         key={value}
@@ -437,21 +450,7 @@ export default function NewPetPage() {
                           boxShadow: selected ? `0 8px 25px ${theme.primary}30` : 'none',
                         }}
                       >
-                        <div className="w-20 h-20 rounded-2xl mx-auto mb-3 flex items-center justify-center"
-                          style={{
-                            background: selected ? 'rgba(255,255,255,0.2)' : `${theme.primary}10`,
-                          }}>
-                          <img
-                            src={value === 'canine' ? '/icons/dog.png' : '/icons/cat.png'}
-                            alt={label}
-                            width={44}
-                            height={44}
-                            style={{
-                              filter: selected ? 'brightness(0) invert(1)' : 'none',
-                              opacity: selected ? 1 : 0.7,
-                            }}
-                          />
-                        </div>
+                        <p className="text-3xl mb-2">{emoji}</p>
                         <p className="font-bold text-lg"
                           style={{ color: selected ? '#fff' : theme.text }}>
                           {label}
