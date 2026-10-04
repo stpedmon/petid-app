@@ -50,13 +50,11 @@ export default function ProfilePhotoPrompt({ show, onClose }: Props) {
 
       const avatarUrl = urlData.publicUrl + '?t=' + Date.now()
 
-      // Update user record
-      const { error: updateError } = await supabase
-        .from('petid_users')
-        .update({ avatar_url: avatarUrl })
-        .eq('id', user.id)
-
-      if (updateError) throw updateError
+      // Update user record via RPC (bypasses view/RLS issues)
+      const { error: rpcError } = await supabase.rpc('update_avatar_url', {
+        new_avatar_url: avatarUrl,
+      })
+      if (rpcError) throw rpcError
 
       await refreshAvatar()
       setDone(true)

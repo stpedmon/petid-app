@@ -20,32 +20,40 @@ export default function SettingsPage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const avatarInputRef = useRef<HTMLInputElement>(null)
 
+  const [avatarError, setAvatarError] = useState<string | null>(null)
+
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !user) return
     setUploadingAvatar(true)
+    setAvatarError(null)
     try {
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+      const ext = file.name.split('.').pop() || 'jpg'
       const filePath = `${user.id}/avatar.${ext}`
+
+      // Upload to Supabase Storage (avatars bucket)
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, { upsert: true })
       if (uploadError) throw uploadError
 
+      // Get public URL
       const { data: urlData } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath)
       const avatarUrl = urlData.publicUrl + '?t=' + Date.now()
 
-      await supabase
-        .from('petid_users')
-        .update({ avatar_url: avatarUrl })
-        .eq('id', user.id)
+      // Save URL in DB via RPC (bypasses view/RLS issues)
+      const { error: rpcError } = await supabase.rpc('update_avatar_url', {
+        new_avatar_url: avatarUrl,
+      })
+      if (rpcError) throw rpcError
 
       await refreshAvatar()
       localStorage.setItem('petid_avatar_prompted', '1')
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error uploading avatar:', err)
+      setAvatarError(err.message || 'Error al subir la foto')
     }
     setUploadingAvatar(false)
   }
@@ -160,6 +168,9 @@ export default function SettingsPage() {
               >
                 {userAvatarUrl ? 'Cambiar foto' : 'Agregar foto'}
               </button>
+              {avatarError && (
+                <p className="text-[10px] mt-1" style={{ color: '#ef4444' }}>{avatarError}</p>
+              )}
             </div>
           </div>
         </motion.div>

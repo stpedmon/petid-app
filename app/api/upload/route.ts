@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get('file') as File | null
     const userId = formData.get('userId') as string | null
+    const type = (formData.get('type') as string) || 'pet'
 
     if (!file || !userId) {
       return NextResponse.json({ error: 'Missing file or userId' }, { status: 400 })
@@ -24,7 +25,13 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer())
     const ext = file.name.split('.').pop() || 'jpg'
-    const key = `pets/${userId}/${Date.now()}.${ext}`
+
+    let key: string
+    if (type === 'avatar') {
+      key = `avatars/${userId}/avatar.${ext}`
+    } else {
+      key = `pets/${userId}/${Date.now()}.${ext}`
+    }
 
     await S3.send(
       new PutObjectCommand({
