@@ -1,6 +1,6 @@
 'use client'
-import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useRef, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
@@ -39,10 +39,22 @@ const breeds: Record<string, string[]> = {
 
 const TOTAL_STEPS = 6
 
-export default function NewPetPage() {
+export default function NewPetPageWrapper() {
+  return (
+    <Suspense>
+      <NewPetPage />
+    </Suspense>
+  )
+}
+
+function NewPetPage() {
   const { user } = useAuth()
   const { theme } = useTheme()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const isOnboarding = searchParams.get('onboarding') === '1'
+  const totalPets = parseInt(searchParams.get('total') || '1')
+  const currentPet = parseInt(searchParams.get('current') || '1')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [saving, setSaving] = useState(false)
   const [step, setStep] = useState(1)
@@ -242,7 +254,12 @@ export default function NewPetPage() {
         })
       }
 
-      router.push(`/pet/${pet.id}`)
+      if (isOnboarding && currentPet < totalPets) {
+        // More pets to register
+        router.push(`/pet/new?onboarding=1&total=${totalPets}&current=${currentPet + 1}`)
+      } else {
+        router.push(`/pet/${pet.id}`)
+      }
     } catch (err: any) {
       alert(err.message || 'Error al registrar mascota')
     } finally {
@@ -260,6 +277,25 @@ export default function NewPetPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: theme.bg }}>
+      {/* Onboarding banner */}
+      {isOnboarding && (
+        <div className="px-5 pt-4 pb-0">
+          <div className="rounded-2xl px-4 py-2.5 flex items-center justify-between"
+            style={{ background: theme.primaryLight, border: `1px solid ${theme.primary}20` }}>
+            <span className="text-xs font-semibold" style={{ color: theme.primary }}>
+              Mascota {currentPet} de {totalPets}
+            </span>
+            <div className="flex gap-1">
+              {Array.from({ length: totalPets }).map((_, i) => (
+                <div key={i} className="w-2 h-2 rounded-full" style={{
+                  background: i < currentPet ? theme.primary : `${theme.primary}30`,
+                }} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="px-5 pt-5 pb-3">
         <div className="flex items-center justify-between mb-4">

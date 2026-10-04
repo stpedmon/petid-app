@@ -6,8 +6,8 @@ import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
 import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
-import { Syringe, Calendar, CheckCircle2, AlertCircle, PawPrint, ShieldCheck, ShieldAlert } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { Syringe, Calendar, CheckCircle2, AlertCircle, PawPrint, ShieldCheck, ShieldAlert, Plus } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,6 +28,8 @@ export default function VaccinesPage() {
   const { theme } = useTheme()
   const router = useRouter()
   const [records, setRecords] = useState<VaxRecord[]>([])
+  const [pets, setPets] = useState<{ id: string; name: string; photo_url: string | null }[]>([])
+  const [showPetPicker, setShowPetPicker] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -47,6 +49,13 @@ export default function VaccinesPage() {
 
     if (ownerData && ownerData.length > 0) {
       const petIds = ownerData.map((o: any) => o.pet_id)
+
+      const { data: petsData } = await supabase
+        .from('petid_pets')
+        .select('id, name, photo_url')
+        .in('id', petIds)
+      if (petsData) setPets(petsData)
+
       const { data } = await supabase
         .from('petid_vaccination_records')
         .select('*, pet:pet_id(id, name, photo_url), vaccine:vaccine_id(name)')
@@ -211,6 +220,80 @@ export default function VaccinesPage() {
           </div>
         )}
       </div>
+
+      {/* FAB — Add vaccine */}
+      {pets.length > 0 && (
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={() => {
+            if (pets.length === 1) {
+              router.push(`/pet/${pets[0].id}?tab=vaccines`)
+            } else {
+              setShowPetPicker(true)
+            }
+          }}
+          className="fixed bottom-24 right-5 z-40 w-14 h-14 rounded-full flex items-center justify-center"
+          style={{
+            background: theme.primary,
+            boxShadow: `0 4px 16px ${theme.primary}40`,
+          }}
+        >
+          <Plus size={24} color="#fff" />
+        </motion.button>
+      )}
+
+      {/* Pet picker modal */}
+      <AnimatePresence>
+        {showPetPicker && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50"
+              style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+              onClick={() => setShowPetPicker(false)}
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl p-5 pb-10 safe-bottom"
+              style={{ background: theme.bgCard }}
+            >
+              <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: theme.border }} />
+              <p className="text-base font-bold mb-4" style={{ color: theme.text }}>
+                ¿A cuál mascota agregar vacuna?
+              </p>
+              <div className="space-y-2">
+                {pets.map(pet => (
+                  <motion.button
+                    key={pet.id}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      setShowPetPicker(false)
+                      router.push(`/pet/${pet.id}?tab=vaccines`)
+                    }}
+                    className="w-full flex items-center gap-3 p-3.5 rounded-2xl"
+                    style={{ background: theme.bg, border: `1px solid ${theme.border}` }}
+                  >
+                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
+                      style={{ background: theme.primaryLight }}>
+                      {pet.photo_url ? (
+                        <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <PawPrint size={16} color={theme.primary} />
+                      )}
+                    </div>
+                    <span className="text-sm font-semibold" style={{ color: theme.text }}>{pet.name}</span>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <BottomNav />
     </div>

@@ -29,7 +29,7 @@ interface UpcomingVax {
 }
 
 export default function DashboardPage() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, userRole, loading: authLoading } = useAuth()
   const { theme } = useTheme()
   const router = useRouter()
   const [pets, setPets] = useState<Pet[]>([])
@@ -131,26 +131,6 @@ export default function DashboardPage() {
             className="mb-5"
           >
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-              {/* Add new pet circle */}
-              <motion.button
-                whileTap={{ scale: 0.92 }}
-                onClick={() => router.push('/pet/new')}
-                className="flex flex-col items-center gap-1.5 flex-shrink-0"
-              >
-                <div
-                  className="w-[68px] h-[68px] rounded-full flex items-center justify-center"
-                  style={{
-                    border: `2px dashed ${theme.border}`,
-                    background: theme.bgCard,
-                  }}
-                >
-                  <PlusCircle size={22} color={theme.textMuted} />
-                </div>
-                <span className="text-[10px] font-medium" style={{ color: theme.textMuted }}>
-                  Agregar
-                </span>
-              </motion.button>
-
               {/* Pet story circles */}
               {pets.map((pet, i) => (
                 <motion.button
@@ -350,22 +330,6 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 gap-3">
             {[
               {
-                icon: <PlusCircle size={20} />,
-                label: 'Registrar mascota',
-                sub: 'Crear tarjeta digital',
-                action: () => router.push('/pet/new'),
-                color: theme.primary,
-                bg: theme.primaryLight,
-              },
-              {
-                icon: <QrCode size={20} />,
-                label: 'Escanear QR',
-                sub: 'Ver mascota',
-                action: () => {},
-                color: '#4D91C6',
-                bg: '#4D91C612',
-              },
-              {
                 icon: <Syringe size={20} />,
                 label: 'Vacunas',
                 sub: 'Ver historial',
@@ -376,10 +340,26 @@ export default function DashboardPage() {
               {
                 icon: <Calendar size={20} />,
                 label: 'Recordatorios',
-                sub: 'Proximas citas',
+                sub: 'Próximas citas',
                 action: () => router.push('/vaccines'),
                 color: '#F0A62B',
                 bg: '#F0A62B12',
+              },
+              ...(userRole === 'admin' ? [{
+                icon: <QrCode size={20} />,
+                label: 'Escanear QR',
+                sub: 'Ver mascota',
+                action: () => {},
+                color: '#4D91C6',
+                bg: '#4D91C612',
+              }] : []),
+              {
+                icon: <PawPrint size={20} />,
+                label: 'Mis mascotas',
+                sub: 'Ver todas',
+                action: () => router.push('/pets'),
+                color: theme.primary,
+                bg: theme.primaryLight,
               },
             ].map((item) => (
               <motion.button

@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { QrCode, Shield, Syringe, Bell, ArrowRight, Sparkles, FileCheck, CheckSquare, Square, Palette, Check } from 'lucide-react'
+import { QrCode, Shield, Syringe, Bell, ArrowRight, Sparkles, FileCheck, CheckSquare, Square, Palette, Check, PawPrint, Plus, Minus } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
@@ -64,10 +64,12 @@ export default function OnboardingPage() {
   const { user } = useAuth()
   const { setThemeId } = useTheme()
   const [selectedTheme, setSelectedTheme] = useState<ThemeId>('petid')
+  const [petCount, setPetCount] = useState(1)
 
-  const totalSteps = infoSteps.length + 2 // info steps + theme step + consent step
+  const totalSteps = infoSteps.length + 3 // info steps + theme step + pet count step + consent step
   const isThemeStep = step === infoSteps.length
-  const isConsentStep = step === infoSteps.length + 1
+  const isPetCountStep = step === infoSteps.length + 1
+  const isConsentStep = step === infoSteps.length + 2
   const isLast = step === totalSteps - 1
 
   const consentColor = '#FF6B6B'
@@ -76,8 +78,13 @@ export default function OnboardingPage() {
   const themeStepColor = '#FF6B6B'
   const themeStepGradient = 'linear-gradient(135deg, #FF6B6B, #FFC857)'
 
+  const petCountColor = '#E65100'
+  const petCountGradient = 'linear-gradient(135deg, #E65100, #FF9800)'
+
   const current = isConsentStep
     ? { color: consentColor, gradient: consentGradient }
+    : isPetCountStep
+    ? { color: petCountColor, gradient: petCountGradient }
     : isThemeStep
     ? { color: themeStepColor, gradient: themeStepGradient }
     : infoSteps[step]
@@ -99,13 +106,17 @@ export default function OnboardingPage() {
       console.error('Error saving consent:', e)
     }
     localStorage.setItem('petid_onboarded', 'true')
+    localStorage.setItem('petid_onboarding_pet_count', String(petCount))
     setSaving(false)
-    router.push('/dashboard')
+    // Go to register first pet
+    router.push('/pet/new?onboarding=1&total=' + petCount + '&current=1')
   }
 
   const next = () => {
     if (isConsentStep) {
       saveConsent()
+    } else if (isPetCountStep) {
+      setStep(s => s + 1)
     } else if (isThemeStep) {
       setThemeId(selectedTheme)
       setStep(s => s + 1)
@@ -156,7 +167,102 @@ export default function OnboardingPage() {
       {/* Content */}
       <div className="relative z-10 flex-1 flex flex-col justify-center px-6">
         <AnimatePresence mode="wait">
-          {isThemeStep ? (
+          {isPetCountStep ? (
+            <motion.div
+              key="petcount"
+              initial={{ x: 80, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -80, opacity: 0 }}
+              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <div className="text-center mb-8">
+                <motion.div
+                  initial={{ scale: 0, rotate: -20 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: 'spring', stiffness: 200, delay: 0.15 }}
+                  className="inline-flex items-center justify-center w-24 h-24 rounded-[28px] mb-5"
+                  style={{
+                    background: petCountGradient,
+                    boxShadow: `0 20px 60px ${petCountColor}40`,
+                  }}
+                >
+                  <PawPrint size={42} color="#fff" strokeWidth={1.5} />
+                </motion.div>
+
+                <motion.h2
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-2xl font-bold text-white mb-1 tracking-tight"
+                >
+                  ¿Cuántas mascotas tienes?
+                </motion.h2>
+                <motion.p
+                  initial={{ y: 15, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.25 }}
+                  className="text-sm text-white/40"
+                >
+                  Las registraremos una por una al terminar
+                </motion.p>
+              </div>
+
+              <motion.div
+                initial={{ y: 15, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="flex items-center justify-center gap-6"
+              >
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setPetCount(c => Math.max(1, c - 1))}
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                  style={{
+                    background: petCount <= 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    opacity: petCount <= 1 ? 0.3 : 1,
+                  }}
+                >
+                  <Minus size={22} color="#fff" />
+                </motion.button>
+
+                <motion.div
+                  key={petCount}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="w-24 h-24 rounded-3xl flex items-center justify-center"
+                  style={{
+                    background: `${petCountColor}20`,
+                    border: `2px solid ${petCountColor}50`,
+                  }}
+                >
+                  <span className="text-5xl font-bold text-white">{petCount}</span>
+                </motion.div>
+
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setPetCount(c => Math.min(10, c + 1))}
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                  style={{
+                    background: petCount >= 10 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    opacity: petCount >= 10 ? 0.3 : 1,
+                  }}
+                >
+                  <Plus size={22} color="#fff" />
+                </motion.button>
+              </motion.div>
+
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="text-center text-xs text-white/30 mt-4"
+              >
+                Puedes agregar más después
+              </motion.p>
+            </motion.div>
+          ) : isThemeStep ? (
             <motion.div
               key="theme"
               initial={{ x: 80, opacity: 0 }}
@@ -461,6 +567,11 @@ export default function OnboardingPage() {
                 Aceptar y Comenzar
               </>
             )
+          ) : isPetCountStep ? (
+            <>
+              Continuar
+              <ArrowRight size={18} />
+            </>
           ) : isThemeStep ? (
             <>
               Confirmar Tema

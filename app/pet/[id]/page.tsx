@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useTheme } from '@/lib/ThemeContext'
 import BottomNav from '@/components/BottomNav'
@@ -74,13 +74,15 @@ export default function PetProfilePage() {
   const { theme } = useTheme()
   const router = useRouter()
   const params = useParams()
+  const searchParams = useSearchParams()
   const petId = params.id as string
+  const initialTab = searchParams.get('tab') as 'vaccines' | 'history' | 'profile' | 'qr' | null
   const [pet, setPet] = useState<Pet | null>(null)
   const [vaxRecords, setVaxRecords] = useState<VaxRecord[]>([])
   const [medications, setMedications] = useState<MedicationRecord[]>([])
   const [vaccineCatalog, setVaccineCatalog] = useState<VaccineCatalogItem[]>([])
   const [adventurePhotos, setAdventurePhotos] = useState<AdventurePhoto[]>([])
-  const [tab, setTab] = useState<'vaccines' | 'history' | 'profile' | 'qr'>('profile')
+  const [tab, setTab] = useState<'vaccines' | 'history' | 'profile' | 'qr'>(initialTab || 'profile')
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -118,6 +120,7 @@ export default function PetProfilePage() {
     if (tab === 'vaccines') {
       fetchMedications()
       fetchVaccineCatalog()
+      if (initialTab === 'vaccines') setShowAddVax(true)
     }
   }, [tab])
 
