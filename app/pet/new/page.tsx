@@ -441,44 +441,16 @@ export default function NewPetPage() {
                           style={{
                             background: selected ? 'rgba(255,255,255,0.2)' : `${theme.primary}10`,
                           }}>
-                          {value === 'canine' ? (
-                            <svg width="44" height="44" viewBox="0 0 512 512" fill="none" stroke={iconColor} strokeWidth="28" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M256 160c-30-10-55 5-70 30-10 18-25 30-45 35-25 6-45 25-50 50-8 35 5 70 30 95 15 15 35 25 55 30h10c15 0 30-3 45-10"/>
-                              <path d="M256 160c30-10 55 5 70 30 10 18 25 30 45 35 25 6 45 25 50 50 8 35-5 70-30 95-15 15-35 25-55 30h-10c-15 0-30-3-45-10"/>
-                              <path d="M200 300c0-15 12-30 28-35 8-3 18-3 28-3s20 0 28 3c16 5 28 20 28 35 0 20-12 35-28 42-8 3-18 5-28 5s-20-2-28-5c-16-7-28-22-28-42z"/>
-                              <path d="M230 340c8 8 22 12 26 12s18-4 26-12"/>
-                              <path d="M235 310c3-5 2-12-2-15"/>
-                              <path d="M277 310c-3-5-2-12 2-15"/>
-                              <path d="M185 115c-15-30-10-65 5-85 10-12 25-18 35-10 12 10 10 35 0 55l-15 30"/>
-                              <path d="M327 115c15-30 10-65-5-85-10-12-25-18-35-10-12 10-10 35 0 55l15 30"/>
-                              <path d="M210 160c-5-15-2-30 5-40"/>
-                              <path d="M302 160c5-15 2-30-5-40"/>
-                              <path d="M240 400v45c0 15-10 28-25 30"/>
-                              <path d="M272 400v45c0 15 10 28 25 30"/>
-                              <circle cx="256" cy="370" r="12" fill={iconColor} stroke="none"/>
-                            </svg>
-                          ) : (
-                            <svg width="44" height="44" viewBox="0 0 512 512" fill="none" stroke={iconColor} strokeWidth="28" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M160 450c-20-10-50-30-65-60-20-40-20-85-5-125 10-25 15-50 10-75-5-30 5-60 25-80"/>
-                              <path d="M125 110c15-35 40-65 70-80 15-8 30-10 40-5 15 8 15 30 5 50l-25 45"/>
-                              <path d="M300 90c10-25 25-50 45-60 12-6 25-4 32 5 12 15 5 40-10 65"/>
-                              <path d="M352 450c20-10 50-30 65-60 20-40 20-85 5-125-10-25-15-50-10-75 5-30-5-55-20-75"/>
-                              <path d="M215 120c25-15 55-20 85-15 25 5 50 15 70 35"/>
-                              <path d="M160 200c-10 15-15 35-12 55 3 25 15 45 35 60 15 10 30 18 50 22"/>
-                              <path d="M352 200c10 15 15 35 12 55-3 25-15 45-35 60-15 10-30 18-50 22"/>
-                              <path d="M233 337c15 15 35 15 46 0"/>
-                              <path d="M256 320v17"/>
-                              <path d="M245 315c-5-3-12-3-18 2"/>
-                              <path d="M267 315c5-3 12-3 18 2"/>
-                              <ellipse cx="256" cy="312" rx="12" ry="10" fill={iconColor} stroke="none"/>
-                              <path d="M380 280l50-10"/>
-                              <path d="M375 310l50 5"/>
-                              <path d="M132 280l-50-10"/>
-                              <path d="M137 310l-50 5"/>
-                              <path d="M350 150c15-5 30 0 40 15 8 12 10 30 5 45"/>
-                              <path d="M380 400c15-5 35-2 50 10"/>
-                            </svg>
-                          )}
+                          <img
+                            src={value === 'canine' ? '/icons/dog.png' : '/icons/cat.png'}
+                            alt={label}
+                            width={44}
+                            height={44}
+                            style={{
+                              filter: selected ? 'brightness(0) invert(1)' : 'none',
+                              opacity: selected ? 1 : 0.7,
+                            }}
+                          />
                         </div>
                         <p className="font-bold text-lg"
                           style={{ color: selected ? '#fff' : theme.text }}>
