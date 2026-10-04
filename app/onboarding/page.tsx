@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic'
 const steps = [
   {
     icon: <QrCode size={48} strokeWidth={1.5} />,
-    emoji: '🐾',
     title: 'Tarjeta Digital Única',
     subtitle: 'Tu mascota, siempre identificada',
     description: 'Cada mascota recibe un código QR exclusivo que cualquiera puede escanear para ver su información y contactarte.',
@@ -19,7 +18,6 @@ const steps = [
   },
   {
     icon: <Syringe size={48} strokeWidth={1.5} />,
-    emoji: '💉',
     title: 'Control de Vacunas',
     subtitle: 'Nunca olvides una vacuna',
     description: 'Registra vacunas, historial médico y recibe recordatorios automáticos cuando se acerque la próxima dosis.',
@@ -29,7 +27,6 @@ const steps = [
   },
   {
     icon: <Shield size={48} strokeWidth={1.5} />,
-    emoji: '🏥',
     title: 'Red Veterinaria',
     subtitle: 'Conectado con tu veterinario',
     description: 'Tu veterinario puede actualizar el historial directamente. Sin papeles, sin cartillas que se pierden.',
@@ -39,7 +36,6 @@ const steps = [
   },
   {
     icon: <Bell size={48} strokeWidth={1.5} />,
-    emoji: '🔔',
     title: 'Mascota Perdida',
     subtitle: 'Tranquilidad para ti',
     description: 'Si alguien encuentra a tu mascota, solo necesita escanear el QR para contactarte al instante.',
@@ -124,16 +120,6 @@ export default function OnboardingPage() {
               }}
             >
               <div className="text-white">{current.icon}</div>
-            </motion.div>
-
-            {/* Emoji badge */}
-            <motion.div
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.25 }}
-              className="text-5xl mb-4"
-            >
-              {current.emoji}
             </motion.div>
 
             {/* Title */}

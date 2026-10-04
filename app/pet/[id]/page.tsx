@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
 import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
-import { ArrowLeft, CreditCard, Syringe, FileText, Edit, Share2, QrCode } from 'lucide-react'
+import { ArrowLeft, CreditCard, Syringe, FileText, Edit, Share2, QrCode, Camera } from 'lucide-react'
 import QRCode from 'react-qr-code'
 
 interface Pet {
@@ -70,7 +70,9 @@ export default function PetProfilePage() {
   if (loading || !pet) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: theme.bg }}>
-        <div className="animate-pulse text-4xl">🐾</div>
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center animate-pulse" style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}>
+          <QrCode size={24} color="#fff" />
+        </div>
       </div>
     )
   }
@@ -97,7 +99,7 @@ export default function PetProfilePage() {
             {pet.photo_url ? (
               <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
             ) : (
-              pet.species === 'canine' ? '🐕' : '🐈'
+              <Camera size={22} color={theme.textMuted} />
             )}
           </div>
           <div>
@@ -134,8 +136,8 @@ export default function PetProfilePage() {
             <div className="rounded-xl p-5 space-y-3" style={{ background: theme.bgCard }}>
               <h3 className="font-semibold" style={{ color: theme.text }}>Datos</h3>
               {[
-                ['Especie', pet.species === 'canine' ? '🐕 Perro' : '🐈 Gato'],
-                ['Sexo', pet.sex === 'male' ? '♂ Macho' : '♀ Hembra'],
+                ['Especie', pet.species === 'canine' ? 'Perro' : 'Gato'],
+                ['Sexo', pet.sex === 'male' ? 'Macho' : 'Hembra'],
                 ['Color', pet.color || '—'],
                 ['Peso', pet.weight_kg ? `${pet.weight_kg} kg` : '—'],
                 ['Microchip', pet.microchip_number || 'Sin microchip'],
@@ -226,14 +228,14 @@ export default function PetProfilePage() {
                   <span className="text-lg font-bold" style={{ fontFamily: "'Playfair Display', serif" }}>
                     Pet ID
                   </span>
-                  <span className="text-xs opacity-70">🐾 Digital</span>
+                  <span className="text-xs opacity-70">Digital</span>
                 </div>
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-16 h-16 rounded-full overflow-hidden bg-white/20 flex items-center justify-center text-2xl">
+                  <div className="w-16 h-16 rounded-full overflow-hidden bg-white/20 flex items-center justify-center">
                     {pet.photo_url ? (
                       <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
                     ) : (
-                      pet.species === 'canine' ? '🐕' : '🐈'
+                      <Camera size={20} color="rgba(255,255,255,0.6)" />
                     )}
                   </div>
                   <div>

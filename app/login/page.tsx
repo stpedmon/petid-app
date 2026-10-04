@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Mail, Lock, Eye, EyeOff, User, Phone, ArrowRight } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, User, Phone, ArrowRight, PawPrint } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export const dynamic = 'force-dynamic'
@@ -91,33 +91,6 @@ export default function LoginPage() {
         />
       </div>
 
-      {/* Floating paw prints */}
-      {[...Array(6)].map((_, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{
-            opacity: [0.05, 0.15, 0.05],
-            y: [-10, -30, -10],
-            x: [0, i % 2 ? 10 : -10, 0],
-          }}
-          transition={{
-            duration: 5 + i,
-            repeat: Infinity,
-            delay: i * 0.8,
-            ease: 'easeInOut',
-          }}
-          className="absolute text-white select-none pointer-events-none"
-          style={{
-            top: `${15 + i * 13}%`,
-            left: `${10 + (i * 17) % 80}%`,
-            fontSize: 18 + (i * 4),
-          }}
-        >
-          🐾
-        </motion.div>
-      ))}
-
       {/* Content */}
       <div className="relative z-10 flex-1 flex flex-col justify-center px-6 py-12">
         {/* Logo & Title */}
@@ -137,7 +110,7 @@ export default function LoginPage() {
               boxShadow: '0 12px 40px rgba(27,107,74,0.4)',
             }}
           >
-            <span className="text-4xl">🐾</span>
+            <PawPrint size={36} color="#fff" />
           </motion.div>
           <h1 className="text-4xl font-bold text-white tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
             Pet ID

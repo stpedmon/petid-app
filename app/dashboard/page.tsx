@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
 import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
-import { PlusCircle, ChevronRight, Sparkles, Syringe, QrCode, Shield } from 'lucide-react'
+import { PlusCircle, ChevronRight, Sparkles, Syringe, QrCode, Shield, Camera, Heart, MapPin, Calendar } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export const dynamic = 'force-dynamic'
@@ -65,11 +65,12 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: theme.bg }}>
         <motion.div
-          animate={{ scale: [1, 1.3, 1], rotate: [0, 10, -10, 0] }}
+          animate={{ scale: [1, 1.3, 1] }}
           transition={{ duration: 1.5, repeat: Infinity }}
-          className="text-5xl"
+          className="w-12 h-12 rounded-2xl flex items-center justify-center"
+          style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}
         >
-          🐾
+          <QrCode size={24} color="#fff" />
         </motion.div>
       </div>
     )
@@ -80,7 +81,7 @@ export default function DashboardPage() {
     const diff = Date.now() - new Date(dob).getTime()
     const years = Math.floor(diff / 31536000000)
     const months = Math.floor((diff % 31536000000) / 2592000000)
-    if (years > 0) return `${years} año${years > 1 ? 's' : ''}`
+    if (years > 0) return `${years} ano${years > 1 ? 's' : ''}`
     return `${months} mes${months !== 1 ? 'es' : ''}`
   }
 
@@ -91,7 +92,7 @@ export default function DashboardPage() {
       <TopBar />
 
       <div className="px-5 py-5">
-        {/* Greeting */}
+        {/* Greeting — social media style */}
         <motion.div
           initial={{ y: -10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -101,7 +102,7 @@ export default function DashboardPage() {
             className="text-2xl font-bold mb-0.5"
             style={{ color: theme.text, fontFamily: "'Playfair Display', serif" }}
           >
-            Hola, {firstName} 👋
+            Hola, {firstName}
           </h2>
           <p className="text-sm" style={{ color: theme.textMuted }}>
             {pets.length === 0
@@ -109,6 +110,72 @@ export default function DashboardPage() {
               : `Cuidando ${pets.length} mascota${pets.length > 1 ? 's' : ''} con amor`}
           </p>
         </motion.div>
+
+        {/* Stories-style pet avatars — Instagram inspired */}
+        {pets.length > 0 && (
+          <motion.div
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.05 }}
+            className="mb-6"
+          >
+            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+              {/* Add new pet circle */}
+              <motion.button
+                whileTap={{ scale: 0.92 }}
+                onClick={() => router.push('/pet/new')}
+                className="flex flex-col items-center gap-1.5 flex-shrink-0"
+              >
+                <div
+                  className="w-[72px] h-[72px] rounded-full flex items-center justify-center"
+                  style={{
+                    border: `2px dashed ${theme.border}`,
+                    background: theme.bgCard,
+                  }}
+                >
+                  <PlusCircle size={24} color={theme.textMuted} />
+                </div>
+                <span className="text-[10px] font-medium" style={{ color: theme.textMuted }}>
+                  Agregar
+                </span>
+              </motion.button>
+
+              {/* Pet story circles */}
+              {pets.map((pet, i) => (
+                <motion.button
+                  key={pet.id}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.1 + i * 0.06 }}
+                  whileTap={{ scale: 0.92 }}
+                  onClick={() => router.push(`/pet/${pet.id}`)}
+                  className="flex flex-col items-center gap-1.5 flex-shrink-0"
+                >
+                  <div
+                    className="w-[72px] h-[72px] rounded-full p-[3px]"
+                    style={{
+                      background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`,
+                    }}
+                  >
+                    <div
+                      className="w-full h-full rounded-full overflow-hidden flex items-center justify-center"
+                      style={{ background: theme.bgCard }}
+                    >
+                      {pet.photo_url ? (
+                        <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <Camera size={22} color={theme.textMuted} />
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-semibold truncate max-w-[72px]" style={{ color: theme.text }}>
+                    {pet.name}
+                  </span>
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Quick stats */}
         <motion.div
@@ -146,7 +213,7 @@ export default function DashboardPage() {
           ))}
         </motion.div>
 
-        {/* Pets section */}
+        {/* Pets section — Social media feed style */}
         <motion.div
           initial={{ y: 10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -181,7 +248,6 @@ export default function DashboardPage() {
                 boxShadow: `0 4px 20px ${theme.primary}06`,
               }}
             >
-              {/* Decorative gradient */}
               <div
                 className="absolute top-0 left-0 right-0 h-1.5 rounded-t-3xl"
                 style={{ background: `linear-gradient(90deg, ${theme.primary}, ${theme.accent})` }}
@@ -190,15 +256,16 @@ export default function DashboardPage() {
               <motion.div
                 animate={{ y: [0, -8, 0] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                className="text-6xl mb-4"
+                className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center"
+                style={{ background: `linear-gradient(135deg, ${theme.primaryLight}, ${theme.bg})` }}
               >
-                🐾
+                <Camera size={32} color={theme.primary} />
               </motion.div>
               <h4 className="font-bold text-lg mb-1" style={{ color: theme.text, fontFamily: "'Playfair Display', serif" }}>
-                ¡Comienza aquí!
+                Comienza aqui
               </h4>
               <p className="text-sm mb-5 max-w-[240px] mx-auto" style={{ color: theme.textMuted }}>
-                Registra tu primera mascota y genera su tarjeta digital con QR único
+                Registra tu primera mascota y genera su tarjeta digital con QR unico
               </p>
               <motion.button
                 whileTap={{ scale: 0.95 }}
@@ -213,63 +280,87 @@ export default function DashboardPage() {
               </motion.button>
             </motion.div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {pets.map((pet, i) => (
                 <motion.button
                   key={pet.id}
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.25 + i * 0.08 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => router.push(`/pet/${pet.id}`)}
-                  className="w-full flex items-center gap-4 p-4 rounded-2xl text-left relative overflow-hidden group"
+                  className="w-full rounded-2xl text-left relative overflow-hidden group"
                   style={{
                     background: theme.bgCard,
                     border: `1px solid ${theme.border}`,
-                    boxShadow: `0 2px 12px ${theme.primary}06`,
+                    boxShadow: `0 2px 16px ${theme.primary}06`,
                   }}
                 >
-                  {/* Left accent */}
+                  {/* Large photo area — social media post style */}
                   <div
-                    className="absolute left-0 top-3 bottom-3 w-1 rounded-r-full"
-                    style={{ background: `linear-gradient(180deg, ${theme.primary}, ${theme.accent})` }}
-                  />
-
-                  <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl overflow-hidden flex-shrink-0 ml-2"
-                    style={{
-                      background: `linear-gradient(135deg, ${theme.primaryLight}, ${theme.bg})`,
-                      border: `2px solid ${theme.border}`,
-                    }}
+                    className="w-full aspect-square max-h-[280px] flex items-center justify-center overflow-hidden"
+                    style={{ background: `linear-gradient(135deg, ${theme.primaryLight}, ${theme.bg})` }}
                   >
                     {pet.photo_url ? (
                       <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
                     ) : (
-                      pet.species === 'canine' ? '🐕' : '🐈'
+                      <div className="text-center">
+                        <Camera size={48} color={theme.textMuted} className="mx-auto mb-2" />
+                        <p className="text-xs font-medium" style={{ color: theme.textMuted }}>Sin foto</p>
+                      </div>
                     )}
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold truncate" style={{ color: theme.text }}>{pet.name}</p>
-                    <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>
-                      {pet.breed || (pet.species === 'canine' ? 'Perro' : 'Gato')}
-                      {pet.date_of_birth ? ` · ${getAge(pet.date_of_birth)}` : ''}
-                    </p>
-                    <div className="flex gap-1.5 mt-1.5">
+                  {/* Info below photo — like Instagram post caption */}
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0"
+                          style={{
+                            background: `linear-gradient(135deg, ${theme.primaryLight}, ${theme.bg})`,
+                            border: `2px solid ${theme.primary}30`,
+                          }}
+                        >
+                          {pet.photo_url ? (
+                            <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <Camera size={16} color={theme.textMuted} />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm" style={{ color: theme.text }}>{pet.name}</p>
+                          <p className="text-[11px]" style={{ color: theme.textMuted }}>
+                            {pet.breed || (pet.species === 'canine' ? 'Perro' : 'Gato')}
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight
+                        size={20}
+                        color={theme.textMuted}
+                        className="opacity-40 group-hover:opacity-70 transition-opacity"
+                      />
+                    </div>
+
+                    {/* Tags row */}
+                    <div className="flex gap-2 mt-2">
                       <span
-                        className="text-[9px] font-semibold px-2 py-0.5 rounded-full"
-                        style={{ background: `${theme.primary}12`, color: theme.primary }}
+                        className="text-[10px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1"
+                        style={{ background: `${theme.primary}10`, color: theme.primary }}
                       >
-                        {pet.sex === 'male' ? '♂ Macho' : '♀ Hembra'}
+                        {pet.sex === 'male' ? 'Macho' : 'Hembra'}
                       </span>
+                      {pet.date_of_birth && (
+                        <span
+                          className="text-[10px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1"
+                          style={{ background: `${theme.accent}15`, color: theme.primaryDark }}
+                        >
+                          <Calendar size={10} />
+                          {getAge(pet.date_of_birth)}
+                        </span>
+                      )}
                     </div>
                   </div>
-
-                  <ChevronRight
-                    size={20}
-                    color={theme.textMuted}
-                    className="flex-shrink-0 opacity-40 group-hover:opacity-70 transition-opacity"
-                  />
                 </motion.button>
               ))}
             </div>

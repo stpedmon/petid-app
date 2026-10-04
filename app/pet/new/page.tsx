@@ -12,14 +12,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 export const dynamic = 'force-dynamic'
 
 const hobbies = [
-  '🎾 Buscar pelota', '🏃 Correr', '💤 Dormir', '🦴 Morder huesos',
-  '🏊 Nadar', '🐾 Pasear', '🧸 Juguetes', '🐕 Otros perros',
-  '🌳 Parque', '🎯 Trucos', '🛋️ Sofá', '🍖 Comer'
+  'Buscar pelota', 'Correr', 'Dormir', 'Morder huesos',
+  'Nadar', 'Pasear', 'Juguetes', 'Otros perros',
+  'Parque', 'Trucos', 'Sofa', 'Comer'
 ]
 
 const personalities = [
-  '😊 Amigable', '🎉 Juguetón', '😴 Tranquilo', '🛡️ Protector',
-  '🧠 Inteligente', '💕 Cariñoso', '🏃 Energético', '😎 Independiente'
+  'Amigable', 'Jugueton', 'Tranquilo', 'Protector',
+  'Inteligente', 'Carinoso', 'Energetico', 'Independiente'
 ]
 
 export default function NewPetPage() {
@@ -57,16 +57,13 @@ export default function NewPetPage() {
       let photo_url = null
 
       if (photoFile) {
-        const ext = photoFile.name.split('.').pop()
-        const path = `${user.id}/${Date.now()}.${ext}`
-        const { error: uploadErr } = await supabase.storage
-          .from('pet-photos')
-          .upload(path, photoFile)
-        if (!uploadErr) {
-          const { data: urlData } = supabase.storage
-            .from('pet-photos')
-            .getPublicUrl(path)
-          photo_url = urlData.publicUrl
+        const formData = new FormData()
+        formData.append('file', photoFile)
+        formData.append('userId', user.id)
+        const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData })
+        const uploadData = await uploadRes.json()
+        if (uploadRes.ok && uploadData.url) {
+          photo_url = uploadData.url
         }
       }
 
@@ -193,16 +190,16 @@ export default function NewPetPage() {
                 className={inputClass}
                 style={{ borderColor: theme.border, background: theme.bg, color: theme.text }}
               >
-                <option value="canine">🐕 Perro</option>
-                <option value="feline">🐈 Gato</option>
+                <option value="canine">Perro</option>
+                <option value="feline">Gato</option>
               </select>
               <select
                 value={form.sex} onChange={e => setForm({ ...form, sex: e.target.value })}
                 className={inputClass}
                 style={{ borderColor: theme.border, background: theme.bg, color: theme.text }}
               >
-                <option value="male">♂ Macho</option>
-                <option value="female">♀ Hembra</option>
+                <option value="male">Macho</option>
+                <option value="female">Hembra</option>
               </select>
             </div>
 

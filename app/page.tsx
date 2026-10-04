@@ -2,6 +2,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/AuthContext'
+import { PawPrint } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export const dynamic = 'force-dynamic'
@@ -26,9 +27,10 @@ export default function Home() {
       <motion.div
         animate={{ scale: [1, 1.2, 1], rotate: [0, 5, -5, 0] }}
         transition={{ duration: 1.5, repeat: Infinity }}
-        className="text-5xl mb-4"
+        className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+        style={{ background: 'linear-gradient(135deg, #1B6B4A, #2ECC71)' }}
       >
-        🐾
+        <PawPrint size={32} color="#fff" />
       </motion.div>
       <motion.p
         initial={{ opacity: 0 }}

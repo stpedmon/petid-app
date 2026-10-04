@@ -104,7 +104,7 @@ export default function SettingsPage() {
                     }}
                   />
                   <span className="text-[10px] font-semibold" style={{ color: theme.text }}>
-                    {t.emoji} {t.name}
+                    {t.name}
                   </span>
                 </motion.button>
               )
@@ -166,7 +166,7 @@ export default function SettingsPage() {
         </motion.button>
 
         <p className="text-center text-[10px] pt-2" style={{ color: theme.textMuted }}>
-          Pet ID v1.0 · Made with 🐾
+          Pet ID v1.0
         </p>
       </div>
 
