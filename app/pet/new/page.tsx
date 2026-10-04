@@ -5,8 +5,8 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
 import {
-  Camera, ArrowLeft, ArrowRight, Sparkles, Check,
-  ChevronLeft, Upload, X, Weight, Cpu
+  Camera, ArrowRight, Sparkles, Check,
+  ChevronLeft, X, Weight, Cpu
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -52,7 +52,10 @@ export default function NewPetPage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoRetried, setPhotoRetried] = useState(false)
-  const [name, setName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [nickname, setNickname] = useState('')
+  const name = `${firstName} ${lastName}`.trim()
   const [species, setSpecies] = useState<'canine' | 'feline' | ''>('')
   const [breed, setBreed] = useState('')
   const [customBreed, setCustomBreed] = useState('')
@@ -141,10 +144,10 @@ export default function NewPetPage() {
 
   const canContinue = () => {
     switch (step) {
-      case 1: return name.trim().length > 0
+      case 1: return firstName.trim().length > 0 && lastName.trim().length > 0
       case 2: return species !== ''
       case 3: return sex !== ''
-      case 4: return true // breed/details are optional
+      case 4: return breed !== '' && dateOfBirth !== '' && color.trim() !== '' && weight !== ''
       case 5: return true // hobbies optional
       case 6: return true // personality optional
       default: return false
@@ -206,6 +209,7 @@ export default function NewPetPage() {
         .from('petid_pets')
         .insert({
           name,
+          nickname: nickname.trim() || null,
           species: species || 'canine',
           breed: finalBreed,
           sex: sex || 'male',
@@ -326,7 +330,7 @@ export default function NewPetPage() {
                   <div className="relative">
                     <label className="cursor-pointer block">
                       <div
-                        className="w-36 h-36 rounded-[2rem] flex items-center justify-center overflow-hidden"
+                        className="w-32 h-32 rounded-[2rem] flex items-center justify-center overflow-hidden"
                         style={{
                           background: photoPreview
                             ? 'transparent'
@@ -344,11 +348,11 @@ export default function NewPetPage() {
                           />
                         ) : (
                           <div className="text-center">
-                            <div className="w-14 h-14 rounded-2xl mx-auto mb-2 flex items-center justify-center"
+                            <div className="w-12 h-12 rounded-2xl mx-auto mb-2 flex items-center justify-center"
                               style={{ background: `${theme.primary}15` }}>
-                              <Camera size={28} color={theme.primary} />
+                              <Camera size={24} color={theme.primary} />
                             </div>
-                            <span className="text-xs font-semibold" style={{ color: theme.primary }}>
+                            <span className="text-[10px] font-semibold" style={{ color: theme.primary }}>
                               Agregar foto
                             </span>
                           </div>
@@ -371,33 +375,63 @@ export default function NewPetPage() {
                   </div>
                 </motion.div>
 
-                {/* Name input */}
+                {/* Name fields */}
                 <motion.div
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.25 }}
+                  className="space-y-3"
                 >
-                  <input
-                    type="text"
-                    placeholder="Ej: Luna, Max, Rocky..."
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    autoFocus
-                    className="w-full text-center text-2xl font-bold py-4 bg-transparent outline-none"
-                    style={{
-                      color: theme.text,
-                      borderBottom: `2px solid ${name ? theme.primary : theme.border}`,
-                      fontFamily: "'Playfair Display', serif",
-                    }}
-                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
+                      <label className="text-[10px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: theme.textMuted }}>
+                        Nombre *
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ej: Luna"
+                        value={firstName}
+                        onChange={e => setFirstName(e.target.value)}
+                        autoFocus
+                        className="w-full text-sm font-bold bg-transparent outline-none"
+                        style={{ color: theme.text }}
+                      />
+                    </div>
+                    <div className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
+                      <label className="text-[10px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: theme.textMuted }}>
+                        Apellido *
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ej: Montenegro"
+                        value={lastName}
+                        onChange={e => setLastName(e.target.value)}
+                        className="w-full text-sm font-bold bg-transparent outline-none"
+                        style={{ color: theme.text }}
+                      />
+                    </div>
+                  </div>
+                  <div className="rounded-2xl p-4" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}>
+                    <label className="text-[10px] font-semibold mb-1.5 block uppercase tracking-wider" style={{ color: theme.textMuted }}>
+                      Apodo (opcional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Lunita, Gordito..."
+                      value={nickname}
+                      onChange={e => setNickname(e.target.value)}
+                      className="w-full text-sm bg-transparent outline-none"
+                      style={{ color: theme.text }}
+                    />
+                  </div>
                   {name && (
                     <motion.p
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="text-center text-sm mt-3"
+                      className="text-center text-sm mt-2"
                       style={{ color: theme.primary }}
                     >
-                      {name} suena increible!
+                      {nickname ? `${name} "${nickname}"` : name} suena increible!
                     </motion.p>
                   )}
                 </motion.div>
@@ -539,7 +573,7 @@ export default function NewPetPage() {
                     Cuentanos mas de {name}
                   </h1>
                   <p className="text-sm" style={{ color: theme.textMuted }}>
-                    Estos datos son opcionales pero ayudan a identificar a {name}
+                    Completa los datos de {name} para su tarjeta
                   </p>
                 </div>
 
