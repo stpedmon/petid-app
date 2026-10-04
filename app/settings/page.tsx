@@ -28,14 +28,21 @@ export default function SettingsPage() {
     setUploadingAvatar(true)
     setAvatarError(null)
     try {
-      const ext = file.name.split('.').pop() || 'jpg'
+      // Verify auth session is active
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Sesión expirada. Inicia sesión de nuevo.')
+
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
       const filePath = `${user.id}/avatar.${ext}`
 
       // Upload to Supabase Storage (avatars bucket)
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true })
-      if (uploadError) throw uploadError
+        .upload(filePath, file, {
+          upsert: true,
+          contentType: file.type || 'image/jpeg',
+        })
+      if (uploadError) throw new Error(`Upload: ${uploadError.message}`)
 
       // Get public URL
       const { data: urlData } = supabase.storage
@@ -47,7 +54,7 @@ export default function SettingsPage() {
       const { error: rpcError } = await supabase.rpc('update_avatar_url', {
         new_avatar_url: avatarUrl,
       })
-      if (rpcError) throw rpcError
+      if (rpcError) throw new Error(`DB: ${rpcError.message}`)
 
       await refreshAvatar()
       localStorage.setItem('petid_avatar_prompted', '1')
@@ -169,7 +176,7 @@ export default function SettingsPage() {
                 {userAvatarUrl ? 'Cambiar foto' : 'Agregar foto'}
               </button>
               {avatarError && (
-                <p className="text-[10px] mt-1" style={{ color: '#ef4444' }}>{avatarError}</p>
+                <p className="text-[11px] mt-1.5 font-medium" style={{ color: '#ef4444' }}>{avatarError}</p>
               )}
             </div>
           </div>

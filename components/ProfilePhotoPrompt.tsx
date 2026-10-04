@@ -29,19 +29,29 @@ export default function ProfilePhotoPrompt({ show, onClose }: Props) {
     reader.readAsDataURL(f)
   }
 
+  const [uploadError, setUploadError] = useState<string | null>(null)
+
   const handleUpload = async () => {
     if (!file || !user) return
     setUploading(true)
+    setUploadError(null)
     try {
+      // Verify auth session is active
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Sesión expirada. Inicia sesión de nuevo.')
+
       const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
       const filePath = `${user.id}/avatar.${ext}`
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true })
+        .upload(filePath, file, {
+          upsert: true,
+          contentType: file.type || 'image/jpeg',
+        })
 
-      if (uploadError) throw uploadError
+      if (uploadError) throw new Error(`Upload: ${uploadError.message}`)
 
       // Get public URL
       const { data: urlData } = supabase.storage
@@ -54,7 +64,7 @@ export default function ProfilePhotoPrompt({ show, onClose }: Props) {
       const { error: rpcError } = await supabase.rpc('update_avatar_url', {
         new_avatar_url: avatarUrl,
       })
-      if (rpcError) throw rpcError
+      if (rpcError) throw new Error(`DB: ${rpcError.message}`)
 
       await refreshAvatar()
       setDone(true)
@@ -65,9 +75,9 @@ export default function ProfilePhotoPrompt({ show, onClose }: Props) {
         setPreview(null)
         setFile(null)
       }, 1500)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error uploading avatar:', err)
-      alert('Error al subir la foto. Intenta de nuevo.')
+      setUploadError(err.message || 'Error al subir la foto')
     }
     setUploading(false)
   }
@@ -201,6 +211,10 @@ export default function ProfilePhotoPrompt({ show, onClose }: Props) {
                         </p>
                       </div>
                     </motion.button>
+                  )}
+
+                  {uploadError && (
+                    <p className="text-xs font-medium text-center mb-2" style={{ color: '#ef4444' }}>{uploadError}</p>
                   )}
 
                   {/* Actions */}

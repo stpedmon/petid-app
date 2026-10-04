@@ -96,7 +96,7 @@ export default function DashboardPage() {
     setThoughtIndex(startIndex)
     const interval = setInterval(() => {
       setThoughtIndex(prev => (prev + 1) % petThoughts.length)
-    }, 7000)
+    }, 60000)
     return () => clearInterval(interval)
   }, [petThoughts])
 
@@ -224,31 +224,28 @@ export default function DashboardPage() {
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={thoughtIndex}
-                        initial={{ opacity: 0, y: 4, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -4, scale: 0.9 }}
-                        transition={{ duration: 0.35 }}
-                        className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap z-10"
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.85 }}
+                        transition={{ duration: 0.4 }}
+                        className="absolute -top-9 left-[50%] whitespace-nowrap z-10"
+                        style={{ pointerEvents: 'none' }}
                       >
                         <div
-                          className="relative px-3 py-1.5 rounded-full text-[10px] font-semibold"
+                          className="relative px-3 py-1.5 rounded-2xl text-[10px] font-semibold"
                           style={{
                             background: theme.bgCard,
                             color: theme.text,
                             border: `1px solid ${theme.border}`,
-                            boxShadow: `0 2px 8px ${theme.primary}10`,
+                            boxShadow: `0 2px 10px rgba(0,0,0,0.08)`,
                           }}
                         >
                           {petThoughts[thoughtIndex]}
-                          {/* Thought bubble tail dots */}
-                          <span
-                            className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full"
-                            style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
-                          />
-                          <span
-                            className="absolute -bottom-3.5 left-[calc(50%-2px)] w-1.5 h-1.5 rounded-full"
-                            style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
-                          />
+                        </div>
+                        {/* Thought bubble tail — three dots descending toward photo */}
+                        <div className="absolute -bottom-2 left-2 flex flex-col items-center gap-[2px]">
+                          <span className="w-[6px] h-[6px] rounded-full" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }} />
+                          <span className="w-[4px] h-[4px] rounded-full" style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }} />
                         </div>
                       </motion.div>
                     </AnimatePresence>
