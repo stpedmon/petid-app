@@ -1,19 +1,19 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --color-primary: #1B6B4A;
-  --color-primary-light: #e8f5ef;
-  --color-primary-dark: #145236;
-  --color-accent: #2ECC71;
-  --color-bg: #f5f7f6;
-  --color-bg-card: #ffffff;
-  --color-text: #1a1a2e;
-  --color-text-muted: #6b7c8a;
-  --color-border: #e8ece9;
+  --color-primary: #FF6B6B;
+  --color-primary-light: #FFF0F0;
+  --color-primary-dark: #E55A5A;
+  --color-accent: #FFC857;
+  --color-bg: #FFF7E9;
+  --color-bg-card: #FFFFFF;
+  --color-text: #1F1F1F;
+  --color-text-muted: #6B6B6B;
+  --color-border: #E8E0D4;
 }
 
 * {
@@ -21,7 +21,7 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--color-bg);
   color: var(--color-text);
   min-height: 100dvh;
@@ -31,7 +31,8 @@ body {
 }
 
 h1, h2, h3 {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
@@ -43,16 +44,16 @@ h1, h2, h3 {
               box-shadow 0.35s cubic-bezier(.4,0,.2,1);
 }
 
-/* Glassmorphism utility */
+/* Glassmorphism utility — use sparingly per brand guidelines */
 .glass {
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
 }
 
 .glass-light {
-  backdrop-filter: blur(12px) saturate(150%);
-  -webkit-backdrop-filter: blur(12px) saturate(150%);
-  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  background: rgba(255,255,255,0.8);
 }
 
 /* Subtle grain texture */
@@ -61,7 +62,7 @@ h1, h2, h3 {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.015;
+  opacity: 0.012;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   z-index: 9999;
 }
@@ -105,3 +106,7 @@ h1, h2, h3 {
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; }
+
+/* Hide scrollbar but keep scrollable */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

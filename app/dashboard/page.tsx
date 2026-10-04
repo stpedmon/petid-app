@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
 import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
-import { PlusCircle, ChevronRight, Sparkles, Syringe, QrCode, Shield, Camera, Heart, MapPin, Calendar, PawPrint } from 'lucide-react'
+import { PlusCircle, ChevronRight, Syringe, QrCode, Camera, Calendar, PawPrint, AlertCircle, Bell } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export const dynamic = 'force-dynamic'
@@ -21,11 +21,19 @@ interface Pet {
   date_of_birth: string | null
 }
 
+interface UpcomingVax {
+  id: string
+  next_dose_date: string
+  pet: { id: string; name: string; photo_url: string | null }
+  vaccine: { name: string }
+}
+
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth()
   const { theme } = useTheme()
   const router = useRouter()
   const [pets, setPets] = useState<Pet[]>([])
+  const [upcomingVax, setUpcomingVax] = useState<UpcomingVax[]>([])
   const [loading, setLoading] = useState(true)
   const [userName, setUserName] = useState('')
 
@@ -57,8 +65,24 @@ export default function DashboardPage() {
         .select('*')
         .in('id', petIds)
       if (petsData) setPets(petsData)
+
+      // Fetch upcoming/overdue vaccines
+      const { data: vaxData } = await supabase
+        .from('petid_vaccination_records')
+        .select('id, next_dose_date, pet:pet_id(id, name, photo_url), vaccine:vaccine_id(name)')
+        .in('pet_id', petIds)
+        .not('next_dose_date', 'is', null)
+        .order('next_dose_date', { ascending: true })
+        .limit(5)
+      if (vaxData) setUpcomingVax(vaxData as any)
     }
     setLoading(false)
+  }
+
+  const isOverdue = (date: string) => new Date(date) < new Date()
+  const daysUntil = (date: string) => {
+    const diff = new Date(date).getTime() - Date.now()
+    return Math.ceil(diff / (1000 * 60 * 60 * 24))
   }
 
   if (authLoading || loading) {
@@ -74,50 +98,37 @@ export default function DashboardPage() {
     )
   }
 
-  const getAge = (dob: string | null) => {
-    if (!dob) return ''
-    const diff = Date.now() - new Date(dob).getTime()
-    const years = Math.floor(diff / 31536000000)
-    const months = Math.floor((diff % 31536000000) / 2592000000)
-    if (years > 0) return `${years} ano${years > 1 ? 's' : ''}`
-    return `${months} mes${months !== 1 ? 'es' : ''}`
-  }
-
   const firstName = userName ? userName.split(' ')[0] : 'amigo'
+  const overdueCount = upcomingVax.filter(v => isOverdue(v.next_dose_date)).length
 
   return (
     <div className="min-h-screen pb-24" style={{ background: theme.bg }}>
       <TopBar />
 
-      <div className="px-5 py-5">
-        {/* Greeting — social media style */}
+      <div className="px-5 py-4">
+        {/* Greeting */}
         <motion.div
           initial={{ y: -10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="mb-6"
+          className="mb-5"
         >
-          <h2
-            className="text-2xl font-bold mb-0.5"
-            style={{ color: theme.text, fontFamily: "'Playfair Display', serif" }}
-          >
+          <h2 className="text-2xl font-bold mb-0.5" style={{ color: theme.text }}>
             Hola, {firstName}
           </h2>
           <p className="text-sm" style={{ color: theme.textMuted }}>
             {pets.length === 0
               ? 'Registra tu primera mascota'
-              : pets.length === 1
-                ? `${pets[0].sex === 'female' ? 'Mama' : 'Papa'} de ${pets[0].name}`
-                : `${pets[0].sex === 'female' ? 'Mama' : 'Papa'} de ${pets.map(p => p.name).join(' y ')}`}
+              : `${pets.length} mascota${pets.length > 1 ? 's' : ''} registrada${pets.length > 1 ? 's' : ''}`}
           </p>
         </motion.div>
 
-        {/* Stories-style pet avatars — Instagram inspired */}
+        {/* Stories-style pet avatars */}
         {pets.length > 0 && (
           <motion.div
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.05 }}
-            className="mb-6"
+            className="mb-5"
           >
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
               {/* Add new pet circle */}
@@ -127,13 +138,13 @@ export default function DashboardPage() {
                 className="flex flex-col items-center gap-1.5 flex-shrink-0"
               >
                 <div
-                  className="w-[72px] h-[72px] rounded-full flex items-center justify-center"
+                  className="w-[68px] h-[68px] rounded-full flex items-center justify-center"
                   style={{
                     border: `2px dashed ${theme.border}`,
                     background: theme.bgCard,
                   }}
                 >
-                  <PlusCircle size={24} color={theme.textMuted} />
+                  <PlusCircle size={22} color={theme.textMuted} />
                 </div>
                 <span className="text-[10px] font-medium" style={{ color: theme.textMuted }}>
                   Agregar
@@ -152,7 +163,7 @@ export default function DashboardPage() {
                   className="flex flex-col items-center gap-1.5 flex-shrink-0"
                 >
                   <div
-                    className="w-[72px] h-[72px] rounded-full p-[3px]"
+                    className="w-[68px] h-[68px] rounded-full p-[3px]"
                     style={{
                       background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`,
                     }}
@@ -164,11 +175,11 @@ export default function DashboardPage() {
                       {pet.photo_url ? (
                         <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
                       ) : (
-                        <Camera size={22} color={theme.textMuted} />
+                        <Camera size={20} color={theme.textMuted} />
                       )}
                     </div>
                   </div>
-                  <span className="text-[10px] font-semibold truncate max-w-[72px]" style={{ color: theme.text }}>
+                  <span className="text-[10px] font-semibold truncate max-w-[68px]" style={{ color: theme.text }}>
                     {pet.name}
                   </span>
                 </motion.button>
@@ -182,190 +193,254 @@ export default function DashboardPage() {
           initial={{ y: 10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-3 gap-3 mb-6"
+          className="grid grid-cols-3 gap-3 mb-5"
         >
-          {[
-            { icon: <QrCode size={18} />, value: pets.length, label: 'Mascotas', color: theme.primary },
-            { icon: <Syringe size={18} />, value: 0, label: 'Vacunas', color: '#E65100' },
-            { icon: <Shield size={18} />, value: 0, label: 'Alertas', color: '#7B1FA2' },
-          ].map((stat, i) => (
-            <motion.div
-              key={stat.label}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.15 + i * 0.08 }}
-              className="rounded-2xl p-4 text-center"
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={() => router.push('/pets')}
+            className="rounded-2xl p-3.5 text-center"
+            style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
+          >
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center mx-auto mb-2"
+              style={{ background: theme.primaryLight, color: theme.primary }}
+            >
+              <PawPrint size={18} />
+            </div>
+            <p className="text-xl font-bold" style={{ color: theme.text }}>{pets.length}</p>
+            <p className="text-[10px] font-medium mt-0.5" style={{ color: theme.textMuted }}>Mascotas</p>
+          </motion.button>
+
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={() => router.push('/vaccines')}
+            className="rounded-2xl p-3.5 text-center"
+            style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
+          >
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center mx-auto mb-2"
+              style={{ background: '#2E9D6812', color: '#2E9D68' }}
+            >
+              <Syringe size={18} />
+            </div>
+            <p className="text-xl font-bold" style={{ color: theme.text }}>
+              {upcomingVax.length}
+            </p>
+            <p className="text-[10px] font-medium mt-0.5" style={{ color: theme.textMuted }}>Vacunas</p>
+          </motion.button>
+
+          <motion.div
+            className="rounded-2xl p-3.5 text-center"
+            style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
+          >
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center mx-auto mb-2"
               style={{
-                background: theme.bgCard,
-                boxShadow: `0 2px 12px ${theme.primary}08`,
-                border: `1px solid ${theme.border}`,
+                background: overdueCount > 0 ? '#D94B5B12' : '#4D91C612',
+                color: overdueCount > 0 ? '#D94B5B' : '#4D91C6',
               }}
             >
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center mx-auto mb-2"
-                style={{ background: `${stat.color}12`, color: stat.color }}
-              >
-                {stat.icon}
-              </div>
-              <p className="text-xl font-bold" style={{ color: theme.text }}>{stat.value}</p>
-              <p className="text-[10px] font-medium mt-0.5" style={{ color: theme.textMuted }}>{stat.label}</p>
-            </motion.div>
-          ))}
+              {overdueCount > 0 ? <AlertCircle size={18} /> : <Bell size={18} />}
+            </div>
+            <p className="text-xl font-bold" style={{ color: theme.text }}>{overdueCount}</p>
+            <p className="text-[10px] font-medium mt-0.5" style={{ color: theme.textMuted }}>Alertas</p>
+          </motion.div>
         </motion.div>
 
-        {/* Pets section — Social media feed style */}
+        {/* Overdue alert banner */}
+        {overdueCount > 0 && (
+          <motion.div
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.15 }}
+            onClick={() => router.push('/vaccines')}
+            className="flex items-center gap-3 p-4 rounded-2xl mb-5 cursor-pointer"
+            style={{ background: '#D94B5B10', border: '1px solid #D94B5B25' }}
+          >
+            <AlertCircle size={20} color="#D94B5B" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold" style={{ color: '#D94B5B' }}>
+                {overdueCount} vacuna{overdueCount > 1 ? 's' : ''} vencida{overdueCount > 1 ? 's' : ''}
+              </p>
+              <p className="text-xs" style={{ color: theme.textMuted }}>
+                Toca para ver detalles
+              </p>
+            </div>
+            <ChevronRight size={16} color="#D94B5B" />
+          </motion.div>
+        )}
+
+        {/* Upcoming vaccines section */}
+        {upcomingVax.length > 0 && (
+          <motion.div
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="mb-5"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base font-bold" style={{ color: theme.text }}>
+                Proximas vacunas
+              </h3>
+              <button
+                onClick={() => router.push('/vaccines')}
+                className="text-xs font-semibold"
+                style={{ color: theme.primary }}
+              >
+                Ver todas
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              {upcomingVax.slice(0, 3).map((vax, i) => {
+                const overdue = isOverdue(vax.next_dose_date)
+                const days = daysUntil(vax.next_dose_date)
+                return (
+                  <motion.div
+                    key={vax.id}
+                    initial={{ x: -10, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.25 + i * 0.05 }}
+                    className="flex items-center gap-3 p-3.5 rounded-2xl"
+                    style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
+                      style={{ background: theme.primaryLight }}
+                    >
+                      {(vax.pet as any)?.photo_url ? (
+                        <img src={(vax.pet as any).photo_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <PawPrint size={16} color={theme.primary} />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: theme.text }}>
+                        {(vax.vaccine as any)?.name}
+                      </p>
+                      <p className="text-xs" style={{ color: theme.textMuted }}>
+                        {(vax.pet as any)?.name} • {new Date(vax.next_dose_date).toLocaleDateString('es')}
+                      </p>
+                    </div>
+                    <span
+                      className="text-[10px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
+                      style={{
+                        background: overdue ? '#D94B5B12' : days <= 7 ? '#F0A62B12' : '#2E9D6812',
+                        color: overdue ? '#D94B5B' : days <= 7 ? '#F0A62B' : '#2E9D68',
+                      }}
+                    >
+                      {overdue ? 'Vencida' : days <= 7 ? `${days}d` : `${days}d`}
+                    </span>
+                  </motion.div>
+                )
+              })}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Quick Actions */}
         <motion.div
           initial={{ y: 10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.25 }}
         >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold" style={{ color: theme.text, fontFamily: "'Playfair Display', serif" }}>
-              Mis Mascotas
-            </h3>
-            <motion.button
-              whileTap={{ scale: 0.92 }}
-              onClick={() => router.push('/pet/new')}
-              className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-full"
-              style={{
-                background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`,
-                color: '#fff',
-                boxShadow: `0 4px 12px ${theme.primary}30`,
-              }}
-            >
-              <PlusCircle size={14} /> Agregar
-            </motion.button>
-          </div>
-
-          {pets.length === 0 ? (
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="rounded-3xl p-8 text-center relative overflow-hidden"
-              style={{
-                background: theme.bgCard,
-                border: `1px solid ${theme.border}`,
-                boxShadow: `0 4px 20px ${theme.primary}06`,
-              }}
-            >
-              <div
-                className="absolute top-0 left-0 right-0 h-1.5 rounded-t-3xl"
-                style={{ background: `linear-gradient(90deg, ${theme.primary}, ${theme.accent})` }}
-              />
-
-              <motion.div
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center"
-                style={{ background: `linear-gradient(135deg, ${theme.primaryLight}, ${theme.bg})` }}
-              >
-                <Camera size={32} color={theme.primary} />
-              </motion.div>
-              <h4 className="font-bold text-lg mb-1" style={{ color: theme.text, fontFamily: "'Playfair Display', serif" }}>
-                Comienza aqui
-              </h4>
-              <p className="text-sm mb-5 max-w-[240px] mx-auto" style={{ color: theme.textMuted }}>
-                Registra tu primera mascota y genera su tarjeta digital con QR unico
-              </p>
+          <h3 className="text-base font-bold mb-3" style={{ color: theme.text }}>
+            Acciones rapidas
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              {
+                icon: <PlusCircle size={20} />,
+                label: 'Registrar mascota',
+                sub: 'Crear tarjeta digital',
+                action: () => router.push('/pet/new'),
+                color: theme.primary,
+                bg: theme.primaryLight,
+              },
+              {
+                icon: <QrCode size={20} />,
+                label: 'Escanear QR',
+                sub: 'Ver mascota',
+                action: () => {},
+                color: '#4D91C6',
+                bg: '#4D91C612',
+              },
+              {
+                icon: <Syringe size={20} />,
+                label: 'Vacunas',
+                sub: 'Ver historial',
+                action: () => router.push('/vaccines'),
+                color: '#2E9D68',
+                bg: '#2E9D6812',
+              },
+              {
+                icon: <Calendar size={20} />,
+                label: 'Recordatorios',
+                sub: 'Proximas citas',
+                action: () => router.push('/vaccines'),
+                color: '#F0A62B',
+                bg: '#F0A62B12',
+              },
+            ].map((item) => (
               <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => router.push('/pet/new')}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-semibold text-sm"
-                style={{
-                  background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`,
-                  boxShadow: `0 6px 20px ${theme.primary}30`,
-                }}
+                key={item.label}
+                whileTap={{ scale: 0.96 }}
+                onClick={item.action}
+                className="rounded-2xl p-4 text-left flex items-start gap-3"
+                style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
               >
-                <Sparkles size={16} /> Registrar mascota
-              </motion.button>
-            </motion.div>
-          ) : (
-            <div className="space-y-4">
-              {pets.map((pet, i) => (
-                <motion.button
-                  key={pet.id}
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.25 + i * 0.08 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => router.push(`/pet/${pet.id}`)}
-                  className="w-full rounded-2xl text-left relative overflow-hidden group"
-                  style={{
-                    background: theme.bgCard,
-                    border: `1px solid ${theme.border}`,
-                    boxShadow: `0 2px 16px ${theme.primary}06`,
-                  }}
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: item.bg, color: item.color }}
                 >
-                  {/* Large photo area — social media post style */}
-                  <div
-                    className="w-full aspect-square max-h-[280px] flex items-center justify-center overflow-hidden"
-                    style={{ background: `linear-gradient(135deg, ${theme.primaryLight}, ${theme.bg})` }}
-                  >
-                    {pet.photo_url ? (
-                      <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="text-center">
-                        <Camera size={48} color={theme.textMuted} className="mx-auto mb-2" />
-                        <p className="text-xs font-medium" style={{ color: theme.textMuted }}>Sin foto</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Info below photo — like Instagram post caption */}
-                  <div className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0"
-                          style={{
-                            background: `linear-gradient(135deg, ${theme.primaryLight}, ${theme.bg})`,
-                            border: `2px solid ${theme.primary}30`,
-                          }}
-                        >
-                          {pet.photo_url ? (
-                            <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <Camera size={16} color={theme.textMuted} />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-bold text-sm" style={{ color: theme.text }}>{pet.name}</p>
-                          <p className="text-[11px]" style={{ color: theme.textMuted }}>
-                            {pet.breed || (pet.species === 'canine' ? 'Perro' : 'Gato')}
-                          </p>
-                        </div>
-                      </div>
-                      <ChevronRight
-                        size={20}
-                        color={theme.textMuted}
-                        className="opacity-40 group-hover:opacity-70 transition-opacity"
-                      />
-                    </div>
-
-                    {/* Tags row */}
-                    <div className="flex gap-2 mt-2">
-                      <span
-                        className="text-[10px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1"
-                        style={{ background: `${theme.primary}10`, color: theme.primary }}
-                      >
-                        {pet.sex === 'male' ? 'Macho' : 'Hembra'}
-                      </span>
-                      {pet.date_of_birth && (
-                        <span
-                          className="text-[10px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1"
-                          style={{ background: `${theme.accent}15`, color: theme.primaryDark }}
-                        >
-                          <Calendar size={10} />
-                          {getAge(pet.date_of_birth)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </motion.button>
-              ))}
-            </div>
-          )}
+                  {item.icon}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[13px] font-semibold" style={{ color: theme.text }}>
+                    {item.label}
+                  </p>
+                  <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>
+                    {item.sub}
+                  </p>
+                </div>
+              </motion.button>
+            ))}
+          </div>
         </motion.div>
+
+        {/* Empty state — only when no pets */}
+        {pets.length === 0 && (
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.15 }}
+            className="rounded-2xl p-8 text-center mt-5"
+            style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
+          >
+            <motion.div
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center"
+              style={{ background: theme.primaryLight }}
+            >
+              <PawPrint size={36} color={theme.primary} />
+            </motion.div>
+            <h4 className="font-bold text-lg mb-1" style={{ color: theme.text }}>
+              Comienza aqui
+            </h4>
+            <p className="text-sm mb-5 max-w-[240px] mx-auto" style={{ color: theme.textMuted }}>
+              Registra tu primera mascota y genera su tarjeta digital con QR unico
+            </p>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => router.push('/pet/new')}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-semibold text-sm"
+              style={{ background: theme.primary }}
+            >
+              <PlusCircle size={16} /> Registrar mascota
+            </motion.button>
+          </motion.div>
+        )}
       </div>
 
       <BottomNav />
