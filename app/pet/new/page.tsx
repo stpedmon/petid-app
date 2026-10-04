@@ -114,13 +114,16 @@ export default function NewPetPage() {
       let photo_url = null
 
       if (photoFile) {
-        const formData = new FormData()
-        formData.append('file', photoFile)
-        formData.append('userId', user.id)
-        const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData })
-        const uploadData = await uploadRes.json()
-        if (uploadRes.ok && uploadData.url) {
-          photo_url = uploadData.url
+        const ext = photoFile.name.split('.').pop() || 'jpg'
+        const filePath = `${user.id}/${Date.now()}.${ext}`
+        const { error: uploadErr } = await supabase.storage
+          .from('pet-photos')
+          .upload(filePath, photoFile, { contentType: photoFile.type, upsert: true })
+        if (!uploadErr) {
+          const { data: urlData } = supabase.storage
+            .from('pet-photos')
+            .getPublicUrl(filePath)
+          photo_url = urlData.publicUrl
         }
       }
 
