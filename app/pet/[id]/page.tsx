@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useTheme } from '@/lib/ThemeContext'
 import BottomNav from '@/components/BottomNav'
-import { ArrowLeft, Syringe, FileText, Share2, QrCode, Camera, Plus, Save, X, Pencil, Trash2, Download, Clock, ChevronRight, Weight, Calendar, Dna } from 'lucide-react'
+import { ArrowLeft, Syringe, FileText, Share2, QrCode, Camera, Plus, Save, X, Pencil, Trash2, Download, Clock, ChevronRight, Weight, Calendar, Dna, PawPrint } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import QRCode from 'react-qr-code'
 import { toPng } from 'html-to-image'
@@ -202,10 +202,11 @@ export default function PetProfilePage() {
   if (loading || !pet) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: theme.bg }}>
-        <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
-          <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: theme.primaryLight }}>
-            <Image src="/petid-icon-color.png" alt="PetID" width={28} height={28} />
-          </div>
+        <motion.div
+          animate={{ scale: [1, 1.3, 1], rotate: [0, 10, -10, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        >
+          <PawPrint size={48} color={theme.primary} strokeWidth={1.5} />
         </motion.div>
       </div>
     )
