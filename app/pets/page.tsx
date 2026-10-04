@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
+import { getPetAge } from '@/lib/petAge'
 import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
 import { Plus, ChevronRight, Camera, PawPrint } from 'lucide-react'
@@ -53,14 +54,8 @@ export default function PetsPage() {
     setLoading(false)
   }
 
-  const getAge = (dob: string | null) => {
-    if (!dob) return ''
-    const diff = Date.now() - new Date(dob).getTime()
-    const years = Math.floor(diff / 31536000000)
-    const months = Math.floor((diff % 31536000000) / 2592000000)
-    if (years > 0) return `${years} año${years > 1 ? 's' : ''}`
-    return `${months} mes${months !== 1 ? 'es' : ''}`
-  }
+  // Age calculation uses shared utility
+  const getAge = (dob: string | null) => getPetAge(dob)
 
   if (authLoading || loading) {
     return (

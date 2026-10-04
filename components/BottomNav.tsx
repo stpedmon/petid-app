@@ -2,14 +2,14 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Home, PawPrint, Syringe, MoreHorizontal, X, Settings, HelpCircle, Shield, QrCode } from 'lucide-react'
+import { Home, PawPrint, Heart, MoreHorizontal, X, Settings, HelpCircle, Shield, QrCode } from 'lucide-react'
 import { useTheme } from '@/lib/ThemeContext'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const mainNavItems = [
   { href: '/dashboard', icon: Home, label: 'Inicio' },
   { href: '/pets', icon: PawPrint, label: 'Mascotas' },
-  { href: '/vaccines', icon: Syringe, label: 'Vacunas' },
+  { href: '/vaccines', icon: Heart, label: 'Salud' },
 ]
 
 const moreMenuItems = [

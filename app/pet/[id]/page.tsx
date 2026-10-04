@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useTheme } from '@/lib/ThemeContext'
+import { getPetAge } from '@/lib/petAge'
 import BottomNav from '@/components/BottomNav'
 import { ArrowLeft, Syringe, FileText, Share2, QrCode, Camera, Plus, Save, X, Pencil, Trash2, Download, Clock, ChevronRight, Weight, Calendar, Dna, PawPrint, Compass, MapPin, ShieldCheck, ShieldAlert, Pill } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -340,14 +341,7 @@ export default function PetProfilePage() {
     } finally { setDownloadingCard(false) }
   }
 
-  const getAge = (dob: string | null) => {
-    if (!dob) return null
-    const diff = Date.now() - new Date(dob).getTime()
-    const y = Math.floor(diff / 31536000000)
-    const m = Math.floor((diff % 31536000000) / 2592000000)
-    if (y > 0) return `${y} año${y > 1 ? 's' : ''}${m > 0 ? ` ${m}m` : ''}`
-    return `${m} mes${m !== 1 ? 'es' : ''}`
-  }
+  const getAge = (dob: string | null) => getPetAge(dob) || null
 
   const publicUrl = typeof window !== 'undefined' ? `${window.location.origin}/public/pet/${petId}` : ''
 
@@ -475,9 +469,15 @@ export default function PetProfilePage() {
                   )}
                   <p className="text-sm mt-0.5" style={{ color: theme.textMuted }}>{pet.breed}</p>
                 </div>
-                <span className="text-xs font-mono px-2.5 py-1 rounded-lg" style={{ background: theme.primaryLight, color: theme.textMuted }}>
-                  ID: {pet.id.slice(0, 8)}
-                </span>
+                <div className="flex flex-col items-end gap-1.5">
+                  <span className="text-xs font-mono px-2.5 py-1 rounded-lg" style={{ background: theme.primaryLight, color: theme.textMuted }}>
+                    ID: {pet.id.slice(0, 8)}
+                  </span>
+                  <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: '#2E9D6815', color: '#2E9D68' }}>
+                    <ShieldCheck size={10} />
+                    Identidad verificada
+                  </span>
+                </div>
               </div>
 
               {/* Stats row — age, weight, sex */}
@@ -1193,7 +1193,7 @@ export default function PetProfilePage() {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   if (navigator.share) {
-                    navigator.share({ title: `Pet ID - ${pet.name}`, url: publicUrl })
+                    navigator.share({ title: `PetID — ${pet.name}`, text: `Identidad digital de ${pet.name}`, url: publicUrl })
                   } else {
                     navigator.clipboard.writeText(publicUrl).then(() => alert('Link copiado'))
                   }
@@ -1202,7 +1202,7 @@ export default function PetProfilePage() {
                 style={{ background: theme.primary, color: '#fff' }}
               >
                 <Share2 size={16} className="inline mr-2" />
-                Compartir QR
+                Compartir identidad
               </motion.button>
             </div>
 

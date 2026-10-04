@@ -266,17 +266,74 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
-        {/* Upcoming vaccines section */}
-        {upcomingVax.length > 0 && (
+        {/* Próximo recordatorio — featured card */}
+        {upcomingVax.length > 0 && (() => {
+          const nextVax = upcomingVax.find(v => !isOverdue(v.next_dose_date)) || upcomingVax[0]
+          const nextOverdue = isOverdue(nextVax.next_dose_date)
+          const nextDays = daysUntil(nextVax.next_dose_date)
+          return (
+            <motion.div
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="mb-5"
+            >
+              <h3 className="text-base font-bold mb-3" style={{ color: theme.text }}>
+                Próximo recordatorio
+              </h3>
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => router.push(`/pet/${(nextVax.pet as any)?.id}?tab=vaccines`)}
+                className="w-full rounded-2xl p-4 text-left relative overflow-hidden"
+                style={{
+                  background: nextOverdue
+                    ? 'linear-gradient(135deg, #D94B5B12, #D94B5B08)'
+                    : `linear-gradient(135deg, ${theme.primary}12, ${theme.accent}08)`,
+                  border: `1px solid ${nextOverdue ? '#D94B5B25' : theme.border}`,
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
+                    style={{ background: theme.bgCard, border: `2px solid ${nextOverdue ? '#D94B5B40' : theme.primary + '30'}` }}>
+                    {(nextVax.pet as any)?.photo_url ? (
+                      <img src={(nextVax.pet as any).photo_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <PawPrint size={18} color={theme.primary} />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: nextOverdue ? '#D94B5B' : theme.primary }}>
+                      {nextOverdue ? 'Vacuna vencida' : 'Próxima vacuna'}
+                    </p>
+                    <p className="text-sm font-bold truncate" style={{ color: theme.text }}>
+                      {(nextVax.pet as any)?.name} · {(nextVax.vaccine as any)?.name}
+                    </p>
+                    <p className="text-lg font-bold mt-1" style={{ color: nextOverdue ? '#D94B5B' : theme.text }}>
+                      {new Date(nextVax.next_dose_date).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-end mt-2">
+                  <span className="text-xs font-semibold flex items-center gap-1" style={{ color: theme.primary }}>
+                    Ver calendario <ChevronRight size={14} />
+                  </span>
+                </div>
+              </motion.button>
+            </motion.div>
+          )
+        })()}
+
+        {/* Upcoming vaccines list */}
+        {upcomingVax.length > 1 && (
           <motion.div
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.25 }}
             className="mb-5"
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-base font-bold" style={{ color: theme.text }}>
-                Proximas vacunas
+                Próximas vacunas
               </h3>
               <button
                 onClick={() => router.push('/vaccines')}
@@ -288,7 +345,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="space-y-2.5">
-              {upcomingVax.slice(0, 3).map((vax, i) => {
+              {upcomingVax.slice(1, 4).map((vax, i) => {
                 const overdue = isOverdue(vax.next_dose_date)
                 const days = daysUntil(vax.next_dose_date)
                 return (
@@ -296,7 +353,7 @@ export default function DashboardPage() {
                     key={vax.id}
                     initial={{ x: -10, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.25 + i * 0.05 }}
+                    transition={{ delay: 0.3 + i * 0.05 }}
                     className="flex items-center gap-3 p-3.5 rounded-2xl"
                     style={{ background: theme.bgCard, border: `1px solid ${theme.border}` }}
                   >
@@ -325,7 +382,7 @@ export default function DashboardPage() {
                         color: overdue ? '#D94B5B' : days <= 7 ? '#F0A62B' : '#2E9D68',
                       }}
                     >
-                      {overdue ? 'Vencida' : days <= 7 ? `${days}d` : `${days}d`}
+                      {overdue ? 'Vencida' : `${days}d`}
                     </span>
                   </motion.div>
                 )

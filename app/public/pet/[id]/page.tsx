@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Phone, MessageCircle, MapPin, Syringe, Dog, Shield } from 'lucide-react'
+import { Phone, MessageCircle, ShieldCheck, Syringe, Dog, User, Heart } from 'lucide-react'
+import { getPetAge } from '@/lib/petAge'
 
 interface Pet {
   id: string; name: string; species: string; breed: string; sex: string;
@@ -12,6 +13,13 @@ interface Pet {
 
 interface Owner {
   full_name: string; phone: string | null;
+}
+
+function maskPhone(phone: string): string {
+  // Show last 4 digits masked: ••••••1234
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length <= 4) return '••••••••'
+  return '••••••' + digits.slice(-4)
 }
 
 export default function PublicPetPage() {
@@ -50,18 +58,17 @@ export default function PublicPetPage() {
     setLoading(false)
   }
 
-  const getAge = (dob: string | null) => {
-    if (!dob) return ''
-    const diff = Date.now() - new Date(dob).getTime()
-    const y = Math.floor(diff / 31536000000)
-    const m = Math.floor((diff % 31536000000) / 2592000000)
-    if (y > 0) return `${y} año${y > 1 ? 's' : ''}`
-    return `${m} mes${m !== 1 ? 'es' : ''}`
-  }
+  const getAge = (dob: string | null) => getPetAge(dob)
+
+  // Check if vaccines are up to date (no overdue next_dose)
+  const vaccinesUpToDate = vaccines.length > 0 && vaccines.every(v => {
+    if (!v.next_dose_date) return true
+    return new Date(v.next_dose_date) >= new Date()
+  })
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#F8FAF9' }}>
         <div className="animate-pulse text-4xl">🐾</div>
       </div>
     )
@@ -69,122 +76,190 @@ export default function PublicPetPage() {
 
   if (!pet) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-6">
-        <Dog size={64} className="text-gray-300 mb-4" />
-        <h1 className="text-xl font-bold text-gray-800 mb-2">Mascota no encontrada</h1>
-        <p className="text-gray-500 text-sm text-center">El código QR no corresponde a ninguna mascota registrada.</p>
+      <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: '#F8FAF9' }}>
+        <Dog size={64} color="#CBD5E1" style={{ marginBottom: 16 }} />
+        <h1 className="text-xl font-bold mb-2" style={{ color: '#1F1F1F' }}>Mascota no encontrada</h1>
+        <p className="text-sm text-center" style={{ color: '#94A3B8' }}>El código QR no corresponde a ninguna mascota registrada.</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero */}
-      <div className="relative" style={{ background: 'linear-gradient(135deg, #1B6B4A, #145236)' }}>
-        <div className="px-5 py-8 text-center text-white">
-          <div className="w-24 h-24 rounded-full mx-auto mb-4 overflow-hidden bg-white/20 flex items-center justify-center text-4xl">
+    <div className="min-h-screen" style={{ background: '#F8FAF9' }}>
+      {/* PetID Branding Header */}
+      <div className="text-center pt-5 pb-2">
+        <span className="text-sm font-bold tracking-wider" style={{ color: '#2E9D68', letterSpacing: '0.08em' }}>
+          PetID
+        </span>
+      </div>
+
+      {/* Pet Hero Card */}
+      <div className="mx-4 rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid #E8EDE9' }}>
+        {/* Photo + Name */}
+        <div className="text-center pt-6 pb-4 px-5">
+          <div
+            className="w-28 h-28 rounded-full mx-auto mb-4 overflow-hidden flex items-center justify-center text-4xl"
+            style={{ background: '#E8F5EE', border: '3px solid #2E9D68' }}
+          >
             {pet.photo_url ? (
               <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
             ) : (
               pet.species === 'canine' ? '🐕' : '🐈'
             )}
           </div>
-          <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>
+
+          <h1 className="text-2xl font-bold mb-1" style={{ color: '#1F1F1F' }}>
             {pet.name}
           </h1>
-          <p className="text-sm opacity-80">{pet.breed} • {getAge(pet.date_of_birth)}</p>
-          <div className="flex items-center justify-center gap-1 mt-2">
-            <Shield size={14} />
-            <span className="text-xs">Verificado por Pet ID</span>
+          <p className="text-sm mb-3" style={{ color: '#64748B' }}>
+            {pet.breed}{getAge(pet.date_of_birth) ? ` · ${getAge(pet.date_of_birth)}` : ''}
+          </p>
+
+          {/* Verified Badge - Prominent */}
+          <div
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold"
+            style={{ background: '#E8F5EE', color: '#2E9D68' }}
+          >
+            <ShieldCheck size={14} />
+            IDENTIDAD VERIFICADA
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: '#E8EDE9' }} />
+
+        {/* Info Section */}
+        <div className="px-5 py-4 space-y-3">
+          {/* Owner */}
+          {owner && (
+            <div className="flex items-center gap-3">
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: '#F1F5F9' }}
+              >
+                <User size={16} color="#64748B" />
+              </div>
+              <div>
+                <span className="text-xs" style={{ color: '#94A3B8' }}>Propietario</span>
+                <p className="text-sm font-semibold" style={{ color: '#1F1F1F' }}>{owner.full_name}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Masked Phone */}
+          {owner?.phone && (
+            <div className="flex items-center gap-3">
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: '#F1F5F9' }}
+              >
+                <Phone size={16} color="#64748B" />
+              </div>
+              <div>
+                <span className="text-xs" style={{ color: '#94A3B8' }}>Teléfono</span>
+                <p className="text-sm font-medium" style={{ color: '#1F1F1F' }}>{maskPhone(owner.phone)}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: '#E8EDE9' }} />
+
+        {/* Health Status */}
+        <div className="px-5 py-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: vaccinesUpToDate ? '#E8F5EE' : '#FFF4E6' }}
+            >
+              <Heart size={16} color={vaccinesUpToDate ? '#2E9D68' : '#F0A62B'} />
+            </div>
+            <div>
+              <span className="text-xs" style={{ color: '#94A3B8' }}>Salud</span>
+              <p className="text-sm font-semibold" style={{ color: vaccinesUpToDate ? '#2E9D68' : '#F0A62B' }}>
+                {vaccines.length === 0
+                  ? 'Sin registros de vacunas'
+                  : vaccinesUpToDate
+                    ? '💉 Vacunas al día'
+                    : '⚠️ Vacunas pendientes'}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="px-5 py-5 space-y-4 -mt-2">
-        {/* Contact buttons - NO phone number visible, only action buttons */}
-        {owner && (
-          <div className="bg-white rounded-xl p-4">
-            <p className="text-sm text-gray-500 mb-3">Dueño: <strong className="text-gray-800">{owner.full_name}</strong></p>
-            <div className="grid grid-cols-2 gap-3">
-              {owner.phone && (
-                <>
-                  <a href={`tel:${owner.phone}`}
-                    className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium text-white"
-                    style={{ background: '#1B6B4A' }}>
-                    <Phone size={18} /> Llamar
-                  </a>
-                  <a href={`https://wa.me/${owner.phone.replace(/\D/g, '')}`}
-                    className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium text-white"
-                    style={{ background: '#25D366' }}>
-                    <MessageCircle size={18} /> WhatsApp
-                  </a>
-                </>
-              )}
-            </div>
-          </div>
-        )}
+      {/* Action Buttons — Prominent */}
+      {owner?.phone && (
+        <div className="mx-4 mt-4 space-y-3">
+          <a
+            href={`tel:${owner.phone}`}
+            className="flex items-center justify-center gap-2.5 py-4 rounded-2xl text-base font-bold text-white w-full"
+            style={{ background: '#2E9D68', boxShadow: '0 2px 8px rgba(46,157,104,0.25)' }}
+          >
+            <Phone size={20} />
+            Llamar al propietario
+          </a>
+          <a
+            href={`https://wa.me/${owner.phone.replace(/\D/g, '')}`}
+            className="flex items-center justify-center gap-2.5 py-4 rounded-2xl text-base font-bold w-full"
+            style={{
+              background: '#FFFFFF',
+              color: '#2E9D68',
+              border: '2px solid #2E9D68',
+            }}
+          >
+            <MessageCircle size={20} />
+            Contactar
+          </a>
+        </div>
+      )}
 
-        {/* Pet info */}
-        <div className="bg-white rounded-xl p-4">
-          <h3 className="font-semibold text-gray-800 mb-3">Información</h3>
-          <div className="grid grid-cols-2 gap-y-2 text-sm">
-            {[
-              ['Especie', pet.species === 'canine' ? 'Perro' : 'Gato'],
-              ['Sexo', pet.sex === 'male' ? 'Macho' : 'Hembra'],
-              ['Color', pet.color || '—'],
-              ['Peso', pet.weight_kg ? `${pet.weight_kg} kg` : '—'],
-            ].map(([l, v]) => (
-              <div key={l}>
-                <span className="text-gray-400 text-xs">{l}</span>
-                <p className="text-gray-800 font-medium">{v}</p>
+      {/* Pet Details (compact) */}
+      <div className="mx-4 mt-4 rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1px solid #E8EDE9' }}>
+        <h3 className="font-semibold text-sm mb-3" style={{ color: '#1F1F1F' }}>Información</h3>
+        <div className="grid grid-cols-2 gap-y-2.5 text-sm">
+          {[
+            ['Especie', pet.species === 'canine' ? 'Perro' : pet.species === 'feline' ? 'Gato' : pet.species],
+            ['Sexo', pet.sex === 'male' ? 'Macho' : 'Hembra'],
+            ['Color', pet.color || '—'],
+            ['Peso', pet.weight_kg ? `${pet.weight_kg} kg` : '—'],
+          ].map(([l, v]) => (
+            <div key={l}>
+              <span className="text-xs" style={{ color: '#94A3B8' }}>{l}</span>
+              <p className="font-medium" style={{ color: '#1F1F1F' }}>{v}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Vaccine History (if any) */}
+      {vaccines.length > 0 && (
+        <div className="mx-4 mt-4 rounded-2xl p-4" style={{ background: '#FFFFFF', border: '1px solid #E8EDE9' }}>
+          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2" style={{ color: '#1F1F1F' }}>
+            <Syringe size={16} color="#2E9D68" /> Vacunas registradas
+          </h3>
+          <div className="space-y-2">
+            {vaccines.map(v => (
+              <div key={v.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid #F1F5F9' }}>
+                <div>
+                  <p className="text-sm font-medium" style={{ color: '#1F1F1F' }}>{(v.vaccine as any)?.name}</p>
+                  <p className="text-xs" style={{ color: '#94A3B8' }}>
+                    {new Date(v.applied_date).toLocaleDateString('es')}
+                  </p>
+                </div>
+                <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#E8F5EE', color: '#2E9D68' }}>✓</span>
               </div>
             ))}
           </div>
         </div>
+      )}
 
-        {/* Hobbies */}
-        {pet.hobbies && pet.hobbies.length > 0 && (
-          <div className="bg-white rounded-xl p-4">
-            <h3 className="font-semibold text-gray-800 mb-3">Hobbies</h3>
-            <div className="flex flex-wrap gap-2">
-              {pet.hobbies.map(h => (
-                <span key={h} className="px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">
-                  {h}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Vaccines */}
-        {vaccines.length > 0 && (
-          <div className="bg-white rounded-xl p-4">
-            <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <Syringe size={18} /> Vacunas
-            </h3>
-            <div className="space-y-2">
-              {vaccines.map(v => (
-                <div key={v.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">{(v.vaccine as any)?.name}</p>
-                    <p className="text-xs text-gray-400">
-                      {new Date(v.applied_date).toLocaleDateString('es')}
-                    </p>
-                  </div>
-                  {v.certificate_number && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-600">✓</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="text-center py-4">
-          <p className="text-xs text-gray-400">
-            🐾 Powered by Pet ID — petid.app
-          </p>
-        </div>
+      {/* Footer */}
+      <div className="text-center py-6 mt-2">
+        <p className="text-xs" style={{ color: '#94A3B8' }}>
+          Powered by <strong style={{ color: '#2E9D68' }}>PetID</strong> — petid.app
+        </p>
       </div>
     </div>
   )
