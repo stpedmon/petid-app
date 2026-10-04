@@ -41,7 +41,7 @@ export default function DashboardPage() {
     const { data: userData } = await supabase
       .from('petid_users')
       .select('full_name')
-      .eq('auth_id', user!.id)
+      .eq('id', user!.id)
       .single()
     if (userData) setUserName(userData.full_name)
 

@@ -95,7 +95,7 @@ export default function NewPetPage() {
       const { data: petidUser } = await supabase
         .from('petid_users')
         .select('id')
-        .eq('auth_id', user.id)
+        .eq('id', user.id)
         .single()
 
       // Link owner to pet
