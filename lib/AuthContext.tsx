@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .schema('petid' as any)
           .from('users')
           .select('role')
-          .eq('auth_id', session.user.id)
+          .eq('id', session.user.id)
           .single()
         setUserRole(data?.role || 'owner')
       }
@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .schema('petid' as any)
           .from('users')
           .select('role')
-          .eq('auth_id', session.user.id)
+          .eq('id', session.user.id)
           .single()
         setUserRole(data?.role || 'owner')
       } else {
