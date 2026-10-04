@@ -204,7 +204,7 @@ export default function PetProfilePage() {
       <div className="min-h-screen flex items-center justify-center" style={{ background: theme.bg }}>
         <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
           <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: theme.primaryLight }}>
-            <Image src="/petid-icon.svg" alt="PetID" width={28} height={28} />
+            <Image src="/petid-icon-color.png" alt="PetID" width={28} height={28} />
           </div>
         </motion.div>
       </div>
@@ -637,7 +637,7 @@ export default function PetProfilePage() {
                 style={{ background: theme.primary }}>
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center p-1">
-                    <Image src="/petid-icon.svg" alt="PetID" width={18} height={18} className="brightness-0 invert" />
+                    <Image src="/petid-icon-white.png" alt="PetID" width={18} height={18} />
                   </div>
                   <span className="text-white font-bold text-sm tracking-wide">PetID</span>
                 </div>

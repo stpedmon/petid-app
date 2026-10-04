@@ -25,7 +25,7 @@ export default function TopBar({ title }: { title?: string }) {
         >
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center p-1.5">
-              <Image src="/petid-icon.svg" alt="PetID" width={24} height={24} className="brightness-0 invert" />
+              <Image src="/petid-icon-white.png" alt="PetID" width={24} height={24} />
             </div>
             <div>
               <h1 className="text-white font-bold text-base leading-tight tracking-tight">

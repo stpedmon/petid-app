@@ -148,9 +148,9 @@ export default function LoginPage() {
             className="flex justify-center mb-3"
           >
             <Image
-              src="/petid-logo-color.svg"
+              src="/petid-logo-color.png"
               alt="PetID"
-              width={220}
+              width={240}
               height={80}
               priority
               className="h-auto"
