@@ -51,6 +51,7 @@ export default function NewPetPage() {
   // Form state
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoRetried, setPhotoRetried] = useState(false)
   const [name, setName] = useState('')
   const [species, setSpecies] = useState<'canine' | 'feline' | ''>('')
   const [breed, setBreed] = useState('')
@@ -63,21 +64,75 @@ export default function NewPetPage() {
   const [selectedHobbies, setSelectedHobbies] = useState<string[]>([])
   const [selectedPersonality, setSelectedPersonality] = useState<string[]>([])
 
-  const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setPhotoFile(file)
+  const compressToJpeg = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = (ev) => {
-        setPhotoPreview(ev.target?.result as string)
+        const img = new Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          const MAX = 600
+          let w = img.naturalWidth, h = img.naturalHeight
+          if (w > MAX || h > MAX) {
+            if (w > h) { h = Math.round((h * MAX) / w); w = MAX }
+            else { w = Math.round((w * MAX) / h); h = MAX }
+          }
+          canvas.width = w
+          canvas.height = h
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, w, h)
+            resolve(canvas.toDataURL('image/jpeg', 0.85))
+          } else {
+            reject(new Error('Canvas not supported'))
+          }
+        }
+        img.onerror = () => reject(new Error('Image decode failed'))
+        img.src = ev.target?.result as string
       }
+      reader.onerror = () => reject(new Error('FileReader failed'))
       reader.readAsDataURL(file)
+    })
+  }
+
+  const handlePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoFile(file)
+    setPhotoRetried(false)
+
+    // Always compress through canvas — guaranteed JPEG output
+    // This handles HEIC/HEIF, oversized images, and exotic formats
+    try {
+      const jpegUrl = await compressToJpeg(file)
+      setPhotoPreview(jpegUrl)
+    } catch {
+      // Last resort fallback: blob URL
+      try {
+        setPhotoPreview(URL.createObjectURL(file))
+      } catch {
+        console.error('Photo preview failed completely')
+      }
+    }
+  }
+
+  const handleImgError = () => {
+    if (!photoFile || photoRetried) return
+    setPhotoRetried(true)
+    // If canvas JPEG failed, try raw blob URL
+    try {
+      setPhotoPreview(URL.createObjectURL(photoFile))
+    } catch {
+      setPhotoPreview(null)
     }
   }
 
   const removePhoto = () => {
+    if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview)
     setPhotoFile(null)
     setPhotoPreview(null)
+    setPhotoRetried(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const toggleChip = (item: string, list: string[], setList: (v: string[]) => void) => {
@@ -118,11 +173,25 @@ export default function NewPetPage() {
       let photo_url = null
 
       if (photoFile) {
-        const ext = photoFile.name.split('.').pop() || 'jpg'
-        const filePath = `${user.id}/${Date.now()}.${ext}`
+        // Convert to JPEG blob for consistent upload format
+        let uploadBlob: Blob = photoFile
+        let uploadExt = photoFile.name.split('.').pop() || 'jpg'
+        let uploadContentType = photoFile.type || 'image/jpeg'
+
+        try {
+          const jpegDataUrl = await compressToJpeg(photoFile)
+          const res = await fetch(jpegDataUrl)
+          uploadBlob = await res.blob()
+          uploadExt = 'jpg'
+          uploadContentType = 'image/jpeg'
+        } catch {
+          // Use original file if compression fails
+        }
+
+        const filePath = `${user.id}/${Date.now()}.${uploadExt}`
         const { error: uploadErr } = await supabase.storage
           .from('pet-photos')
-          .upload(filePath, photoFile, { contentType: photoFile.type, upsert: true })
+          .upload(filePath, uploadBlob, { contentType: uploadContentType, upsert: true })
         if (!uploadErr) {
           const { data: urlData } = supabase.storage
             .from('pet-photos')
@@ -267,7 +336,12 @@ export default function NewPetPage() {
                         }}
                       >
                         {photoPreview ? (
-                          <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                          <img
+                            src={photoPreview}
+                            alt={name || 'Preview'}
+                            onError={handleImgError}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                          />
                         ) : (
                           <div className="text-center">
                             <div className="w-14 h-14 rounded-2xl mx-auto mb-2 flex items-center justify-center"
@@ -679,7 +753,11 @@ export default function NewPetPage() {
                     <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center"
                       style={{ background: `linear-gradient(135deg, ${theme.primaryLight}, ${theme.bg})` }}>
                       {photoPreview ? (
-                        <img src={photoPreview} alt={name} className="w-full h-full object-cover" />
+                        <img
+                          src={photoPreview}
+                          alt={name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        />
                       ) : (
                         <Camera size={18} color={theme.textMuted} />
                       )}
