@@ -80,22 +80,29 @@ export default function LoginPage() {
         {floatingPaws.map((paw, i) => (
           <motion.div
             key={i}
-            className="absolute paw-float"
+            className="absolute"
             style={{
               left: paw.x,
               top: paw.y,
-              animationDelay: `${paw.delay}s`,
-              animationDuration: `${paw.duration}s`,
             }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: paw.delay * 0.3 }}
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{
+              opacity: [0, 0.3, 0.15, 0.3, 0],
+              scale: [0.5, 1, 1.1, 1, 0.5],
+              y: [0, -15, -25, -15, 0],
+              rotate: [paw.rotate, paw.rotate + 10, paw.rotate, paw.rotate - 10, paw.rotate],
+            }}
+            transition={{
+              duration: paw.duration,
+              delay: paw.delay,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
           >
             <PawPrint
               size={paw.size}
               color="#FF6B6B"
-              strokeWidth={1.5}
-              style={{ transform: `rotate(${paw.rotate}deg)`, opacity: 0.12 }}
+              strokeWidth={1.8}
             />
           </motion.div>
         ))}
