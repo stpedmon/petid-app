@@ -17,36 +17,52 @@ export default function TopBar({ title }: { title?: string }) {
     >
       <div className="mx-3 mt-3">
         <div
-          className="flex items-center justify-between px-5 py-3 rounded-2xl glass"
+          className="flex items-center justify-between px-4 py-2.5 rounded-2xl"
           style={{
-            background: `linear-gradient(135deg, ${theme.primary}ee, ${theme.primaryDark}dd)`,
-            boxShadow: `0 8px 32px ${theme.primary}30`,
+            background: theme.bgCard,
+            border: `1px solid ${theme.border}`,
+            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
           }}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center p-1.5">
-              <Image src="/petid-icon-white.png" alt="PetID" width={24} height={24} />
-            </div>
+          <div className="flex items-center gap-2.5">
+            <Image
+              src="/petid-icon-color.png"
+              alt="PetID"
+              width={38}
+              height={38}
+              className="rounded-lg"
+            />
             <div>
-              <h1 className="text-white font-bold text-base leading-tight tracking-tight">
-                {title || 'Pet ID'}
+              <h1 className="font-extrabold text-[15px] leading-tight tracking-tight" style={{ color: theme.text }}>
+                {title || (
+                  <>
+                    <span>Pet</span>
+                    <span style={{ color: theme.primary }}>ID</span>
+                  </>
+                )}
               </h1>
-              <p className="text-white/60 text-[10px] font-medium tracking-wider uppercase">
-                Digital Identity
+              <p className="text-[9px] font-semibold tracking-[0.15em] uppercase" style={{ color: theme.textMuted }}>
+                Siempre Contigo
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
-            <button className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-transform">
-              <Bell size={18} color="rgba(255,255,255,0.85)" />
-            </button>
-            <button
-              onClick={signOut}
-              className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-transform"
+          <div className="flex items-center gap-1.5">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ background: theme.primaryLight }}
             >
-              <LogOut size={18} color="rgba(255,255,255,0.85)" />
-            </button>
+              <Bell size={18} color={theme.primary} strokeWidth={1.8} />
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={signOut}
+              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ background: '#D94B5B12' }}
+            >
+              <LogOut size={18} color="#D94B5B" strokeWidth={1.8} />
+            </motion.button>
           </div>
         </div>
       </div>
