@@ -6,6 +6,8 @@ import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
 import { ArrowLeft, Syringe, Check } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default function VaccinatePage() {
   const { user } = useAuth()
   const { theme } = useTheme()

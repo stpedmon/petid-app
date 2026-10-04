@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Dog, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 const pawPositions = [
   { top: '8%', left: '10%', size: 28, delay: '0s', dur: '6s' },
   { top: '15%', right: '15%', size: 22, delay: '1s', dur: '7s' },

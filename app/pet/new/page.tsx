@@ -8,6 +8,8 @@ import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
 import { Camera, ArrowLeft } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 const hobbies = [
   '🎾 Buscar pelota', '🏃 Correr', '💤 Dormir', '🦴 Morder huesos',
   '🏊 Nadar', '🐾 Pasear', '🧸 Juguetes', '🐕 Otros perros',

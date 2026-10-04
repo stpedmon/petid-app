@@ -8,6 +8,8 @@ import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
 import { PlusCircle, ChevronRight, Dog as DogIcon } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 interface Pet {
   id: string
   name: string

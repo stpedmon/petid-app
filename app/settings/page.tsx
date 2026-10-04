@@ -6,6 +6,8 @@ import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
 import { Check, User, Palette } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default function SettingsPage() {
   const { theme, themeId, setThemeId } = useTheme()
   const { user, signOut } = useAuth()

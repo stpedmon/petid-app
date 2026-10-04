@@ -6,6 +6,8 @@ import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
 import { Search, Syringe, Dog, Users, BarChart3, LogOut } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default function VetDashboardPage() {
   const { user, userRole, signOut } = useAuth()
   const { theme } = useTheme()
