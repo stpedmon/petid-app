@@ -3,8 +3,11 @@ import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
-import { Mail, Lock, Eye, EyeOff, User, Phone, ArrowRight, PawPrint, Globe, ChevronDown } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, User, ArrowRight, PawPrint } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import PhoneInput from 'react-phone-number-input'
+import type { Country } from 'react-phone-number-input'
+import 'react-phone-number-input/style.css'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,41 +25,14 @@ const floatingPaws = [
   { x: '40%', y: '90%', size: 19, delay: 1.8, duration: 6.8, rotate: -15 },
 ]
 
-const phoneCodes = [
-  { code: 'PA', dial: '+507', flag: '🇵🇦', name: 'Panamá' },
-  { code: 'MX', dial: '+52', flag: '🇲🇽', name: 'México' },
-  { code: 'CO', dial: '+57', flag: '🇨🇴', name: 'Colombia' },
-  { code: 'AR', dial: '+54', flag: '🇦🇷', name: 'Argentina' },
-  { code: 'CL', dial: '+56', flag: '🇨🇱', name: 'Chile' },
-  { code: 'PE', dial: '+51', flag: '🇵🇪', name: 'Perú' },
-  { code: 'EC', dial: '+593', flag: '🇪🇨', name: 'Ecuador' },
-  { code: 'VE', dial: '+58', flag: '🇻🇪', name: 'Venezuela' },
-  { code: 'DO', dial: '+1', flag: '🇩🇴', name: 'Rep. Dominicana' },
-  { code: 'GT', dial: '+502', flag: '🇬🇹', name: 'Guatemala' },
-  { code: 'CR', dial: '+506', flag: '🇨🇷', name: 'Costa Rica' },
-  { code: 'UY', dial: '+598', flag: '🇺🇾', name: 'Uruguay' },
-  { code: 'PY', dial: '+595', flag: '🇵🇾', name: 'Paraguay' },
-  { code: 'BO', dial: '+591', flag: '🇧🇴', name: 'Bolivia' },
-  { code: 'HN', dial: '+504', flag: '🇭🇳', name: 'Honduras' },
-  { code: 'SV', dial: '+503', flag: '🇸🇻', name: 'El Salvador' },
-  { code: 'NI', dial: '+505', flag: '🇳🇮', name: 'Nicaragua' },
-  { code: 'CU', dial: '+53', flag: '🇨🇺', name: 'Cuba' },
-  { code: 'PR', dial: '+1', flag: '🇵🇷', name: 'Puerto Rico' },
-  { code: 'ES', dial: '+34', flag: '🇪🇸', name: 'España' },
-  { code: 'US', dial: '+1', flag: '🇺🇸', name: 'Estados Unidos' },
-  { code: 'BR', dial: '+55', flag: '🇧🇷', name: 'Brasil' },
-  { code: 'CA', dial: '+1', flag: '🇨🇦', name: 'Canadá' },
-]
-
 function LoginContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isRegister, setIsRegister] = useState(false)
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [phoneCountry, setPhoneCountry] = useState('') // country code like 'PA'
-  const [country, setCountry] = useState('')
+  const [phone, setPhone] = useState<string | undefined>()
+  const [phoneCountryCode, setPhoneCountryCode] = useState<Country>('PA')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [sex, setSex] = useState<'male' | 'female'>('male')
   const [showPass, setShowPass] = useState(false)
@@ -81,14 +57,9 @@ function LoginContent() {
           setLoading(false)
           return
         }
-        if (!country) {
-          setError('Selecciona tu país.')
-          setLoading(false)
-          return
-        }
         const fullName = `${firstName.trim()} ${lastName.trim()}`
-        const selectedDial = phoneCodes.find(pc => pc.code === phoneCountry)?.dial || ''
-        const fullPhone = selectedDial ? `${selectedDial} ${phone.trim()}` : phone.trim()
+        const fullPhone = phone || ''
+        const country = phoneCountryCode || ''
         const siteUrl = window.location.origin
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
@@ -380,101 +351,18 @@ function LoginContent() {
                         />
                       </div>
                     </div>
-                    {/* Phone with country code */}
-                    <div className="flex gap-2">
-                      {/* Country code selector — native select with flag image overlay */}
-                      <div className="relative shrink-0" style={{ width: '115px' }}>
-                        {phoneCountry && (
-                          <img
-                            src={`https://flagcdn.com/w40/${phoneCountry.toLowerCase()}.png`}
-                            alt=""
-                            className="absolute left-3 top-1/2 -translate-y-1/2 rounded-sm pointer-events-none"
-                            style={{ width: '22px', height: '16px', objectFit: 'cover' }}
-                          />
-                        )}
-                        {!phoneCountry && (
-                          <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" color="#6B6B6B" />
-                        )}
-                        <select
-                          value={phoneCountry}
-                          onChange={e => setPhoneCountry(e.target.value)}
-                          className="w-full py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30 appearance-none"
-                          style={{
-                            background: '#FFF7E9',
-                            border: '1px solid #E8E0D4',
-                            color: phoneCountry ? 'transparent' : '#6B6B6B',
-                            paddingLeft: '32px',
-                            paddingRight: '24px',
-                          }}
-                        >
-                          <option value="">Cód.</option>
-                          {phoneCodes.map(pc => (
-                            <option key={pc.code} value={pc.code}>
-                              {pc.flag} {pc.dial} {pc.name}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" color="#6B6B6B" />
-                        {/* Show dial code next to flag */}
-                        {phoneCountry && (
-                          <span
-                            className="absolute top-1/2 -translate-y-1/2 text-xs font-medium pointer-events-none"
-                            style={{ left: '58px', color: '#1F1F1F' }}
-                          >
-                            {phoneCodes.find(pc => pc.code === phoneCountry)?.dial}
-                          </span>
-                        )}
-                      </div>
-                      {/* Phone number input */}
-                      <div className="relative flex-1">
-                        <input
-                          type="tel" placeholder="Teléfono"
-                          value={phone} onChange={e => setPhone(e.target.value)}
-                          className="w-full pl-4 pr-4 py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30"
-                          style={{ background: '#FFF7E9', border: '1px solid #E8E0D4', color: '#1F1F1F' }}
-                        />
-                      </div>
-                    </div>
-                    {/* Country selector */}
-                    <div className="relative">
-                      <Globe size={18} className="absolute left-4 top-1/2 -translate-y-1/2" color="#6B6B6B" />
-                      <select
-                        required
-                        value={country} onChange={e => {
-                          const val = e.target.value
-                          setCountry(val)
-                          if (!phoneCountry) setPhoneCountry(val)
-                        }}
-                        className="w-full pl-11 pr-10 py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30 appearance-none"
-                        style={{ background: '#FFF7E9', border: '1px solid #E8E0D4', color: country ? '#1F1F1F' : '#6B6B6B' }}
-                      >
-                        <option value="" disabled>País</option>
-                        <option value="MX">🇲🇽 México</option>
-                        <option value="CO">🇨🇴 Colombia</option>
-                        <option value="AR">🇦🇷 Argentina</option>
-                        <option value="CL">🇨🇱 Chile</option>
-                        <option value="PE">🇵🇪 Perú</option>
-                        <option value="EC">🇪🇨 Ecuador</option>
-                        <option value="VE">🇻🇪 Venezuela</option>
-                        <option value="DO">🇩🇴 República Dominicana</option>
-                        <option value="GT">🇬🇹 Guatemala</option>
-                        <option value="CR">🇨🇷 Costa Rica</option>
-                        <option value="PA">🇵🇦 Panamá</option>
-                        <option value="UY">🇺🇾 Uruguay</option>
-                        <option value="PY">🇵🇾 Paraguay</option>
-                        <option value="BO">🇧🇴 Bolivia</option>
-                        <option value="HN">🇭🇳 Honduras</option>
-                        <option value="SV">🇸🇻 El Salvador</option>
-                        <option value="NI">🇳🇮 Nicaragua</option>
-                        <option value="CU">🇨🇺 Cuba</option>
-                        <option value="PR">🇵🇷 Puerto Rico</option>
-                        <option value="ES">🇪🇸 España</option>
-                        <option value="US">🇺🇸 Estados Unidos</option>
-                        <option value="BR">🇧🇷 Brasil</option>
-                        <option value="CA">🇨🇦 Canadá</option>
-                        <option value="OTHER">🌍 Otro</option>
-                      </select>
-                      <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" color="#6B6B6B" />
+                    {/* Phone with flag country picker */}
+                    <div className="petid-phone-wrapper">
+                      <PhoneInput
+                        international
+                        defaultCountry="PA"
+                        countryCallingCodeEditable={false}
+                        value={phone}
+                        onChange={setPhone}
+                        onCountryChange={(c) => { if (c) setPhoneCountryCode(c) }}
+                        placeholder="Teléfono"
+                        className="petid-phone-input"
+                      />
                     </div>
                     {/* Sex selector */}
                     <div className="flex gap-2">

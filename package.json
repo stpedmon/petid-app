@@ -21,6 +21,7 @@
     "qrcode": "^1.5.4",
     "react": "^18",
     "react-dom": "^18",
+    "react-phone-number-input": "^3.4.18",
     "react-qr-code": "^2.2.0"
   },
   "devDependencies": {
