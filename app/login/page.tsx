@@ -1,6 +1,6 @@
 'use client'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
 import { Mail, Lock, Eye, EyeOff, User, Phone, ArrowRight, PawPrint } from 'lucide-react'
@@ -22,7 +22,7 @@ const floatingPaws = [
   { x: '40%', y: '90%', size: 19, delay: 1.8, duration: 6.8, rotate: -15 },
 ]
 
-export default function LoginPage() {
+function LoginContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isRegister, setIsRegister] = useState(false)
@@ -32,7 +32,11 @@ export default function LoginPage() {
   const [showPass, setShowPass] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [pendingVerification, setPendingVerification] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const tokenExpired = searchParams.get('error') === 'token_expired'
+  const confirmed = searchParams.get('confirmed') === '1'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,10 +45,14 @@ export default function LoginPage() {
 
     try {
       if (isRegister) {
+        const siteUrl = window.location.origin
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { name, phone } }
+          options: {
+            data: { name, phone },
+            emailRedirectTo: `${siteUrl}/api/auth/callback`,
+          }
         })
         if (signUpError) throw signUpError
 
@@ -58,7 +66,15 @@ export default function LoginPage() {
             role: 'owner'
           })
         }
-        router.push('/onboarding')
+
+        // If email confirmation is required, user won't have a session yet
+        if (data.session) {
+          // Autoconfirm is on — go straight to onboarding
+          router.push('/onboarding')
+        } else {
+          // Show "check your email" screen
+          setPendingVerification(true)
+        }
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
         if (signInError) throw signInError
@@ -82,6 +98,52 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (pendingVerification) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6"
+        style={{ background: '#FFF7E9' }}>
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 200 }}
+          className="text-6xl mb-6"
+        >
+          📧
+        </motion.div>
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-center max-w-sm"
+        >
+          <h1 className="text-2xl font-bold mb-3" style={{ color: '#1F1F1F' }}>
+            Revisa tu correo
+          </h1>
+          <p className="text-sm mb-2" style={{ color: '#6B6B6B' }}>
+            Enviamos un enlace de verificación a:
+          </p>
+          <p className="text-sm font-semibold mb-6" style={{ color: '#FF6B6B' }}>
+            {email}
+          </p>
+          <p className="text-xs mb-8" style={{ color: '#6B6B6B' }}>
+            Haz clic en el enlace del correo para activar tu cuenta. Si no lo ves, revisa la carpeta de spam.
+          </p>
+          <button
+            onClick={() => {
+              setPendingVerification(false)
+              setIsRegister(false)
+              setError('')
+            }}
+            className="px-6 py-3 rounded-xl text-sm font-semibold text-white"
+            style={{ background: '#FF6B6B' }}
+          >
+            Volver a iniciar sesión
+          </button>
+        </motion.div>
+      </div>
+    )
   }
 
   return (
@@ -220,6 +282,27 @@ export default function LoginPage() {
                 )
               })}
             </div>
+
+            {confirmed && (
+              <motion.p
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-sm text-center py-2.5 px-4 rounded-xl mb-3"
+                style={{ background: '#2E9D6815', color: '#2E9D68' }}
+              >
+                ✅ Cuenta verificada. Inicia sesión.
+              </motion.p>
+            )}
+            {tokenExpired && (
+              <motion.p
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-sm text-center py-2.5 px-4 rounded-xl mb-3"
+                style={{ background: '#D94B5B15', color: '#D94B5B' }}
+              >
+                El enlace expiró o ya fue usado. Intenta iniciar sesión o regístrate de nuevo.
+              </motion.p>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-3">
               <AnimatePresence mode="wait">
@@ -372,5 +455,17 @@ export default function LoginPage() {
         </motion.div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF7E9' }}>
+        <div className="w-8 h-8 rounded-full border-3 border-t-transparent animate-spin" style={{ borderColor: '#FF6B6B', borderTopColor: 'transparent' }} />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }
