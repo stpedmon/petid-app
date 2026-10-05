@@ -3,7 +3,7 @@ import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
-import { Mail, Lock, Eye, EyeOff, User, Phone, ArrowRight, PawPrint } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, User, Phone, ArrowRight, PawPrint, Globe, ChevronDown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export const dynamic = 'force-dynamic'
@@ -26,10 +26,14 @@ function LoginContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isRegister, setIsRegister] = useState(false)
-  const [name, setName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [phone, setPhone] = useState('')
+  const [country, setCountry] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [sex, setSex] = useState<'male' | 'female'>('male')
   const [showPass, setShowPass] = useState(false)
+  const [showConfirmPass, setShowConfirmPass] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [pendingVerification, setPendingVerification] = useState(false)
@@ -45,12 +49,23 @@ function LoginContent() {
 
     try {
       if (isRegister) {
+        if (password !== confirmPassword) {
+          setError('Las contraseñas no coinciden.')
+          setLoading(false)
+          return
+        }
+        if (!country) {
+          setError('Selecciona tu país.')
+          setLoading(false)
+          return
+        }
+        const fullName = `${firstName.trim()} ${lastName.trim()}`
         const siteUrl = window.location.origin
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { name, phone },
+            data: { name: fullName, phone, country },
             emailRedirectTo: `${siteUrl}/api/auth/callback`,
           }
         })
@@ -59,10 +74,11 @@ function LoginContent() {
         if (data.user) {
           await supabase.from('petid_users').insert({
             id: data.user.id,
-            full_name: name,
+            full_name: fullName,
             email,
             phone,
             sex,
+            country,
             role: 'owner'
           })
         }
@@ -315,37 +331,78 @@ function LoginContent() {
                     transition={{ duration: 0.3 }}
                     className="space-y-3 overflow-hidden"
                   >
-                    <div className="relative">
-                      <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2" color="#6B6B6B" />
-                      <input
-                        type="text" placeholder="Nombre completo" required
-                        value={name} onChange={e => setName(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30"
-                        style={{
-                          background: '#FFF7E9',
-                          border: '1px solid #E8E0D4',
-                          color: '#1F1F1F',
-                        }}
-                      />
+                    {/* First & Last Name */}
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2" color="#6B6B6B" />
+                        <input
+                          type="text" placeholder="Nombre" required
+                          value={firstName} onChange={e => setFirstName(e.target.value)}
+                          className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30"
+                          style={{ background: '#FFF7E9', border: '1px solid #E8E0D4', color: '#1F1F1F' }}
+                        />
+                      </div>
+                      <div className="relative flex-1">
+                        <input
+                          type="text" placeholder="Apellido" required
+                          value={lastName} onChange={e => setLastName(e.target.value)}
+                          className="w-full pl-4 pr-4 py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30"
+                          style={{ background: '#FFF7E9', border: '1px solid #E8E0D4', color: '#1F1F1F' }}
+                        />
+                      </div>
                     </div>
+                    {/* Phone */}
                     <div className="relative">
                       <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2" color="#6B6B6B" />
                       <input
-                        type="tel" placeholder="Telefono"
+                        type="tel" placeholder="Teléfono"
                         value={phone} onChange={e => setPhone(e.target.value)}
                         className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30"
-                        style={{
-                          background: '#FFF7E9',
-                          border: '1px solid #E8E0D4',
-                          color: '#1F1F1F',
-                        }}
+                        style={{ background: '#FFF7E9', border: '1px solid #E8E0D4', color: '#1F1F1F' }}
                       />
+                    </div>
+                    {/* Country selector */}
+                    <div className="relative">
+                      <Globe size={18} className="absolute left-4 top-1/2 -translate-y-1/2" color="#6B6B6B" />
+                      <select
+                        required
+                        value={country} onChange={e => setCountry(e.target.value)}
+                        className="w-full pl-11 pr-10 py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30 appearance-none"
+                        style={{ background: '#FFF7E9', border: '1px solid #E8E0D4', color: country ? '#1F1F1F' : '#6B6B6B' }}
+                      >
+                        <option value="" disabled>País</option>
+                        <option value="MX">🇲🇽 México</option>
+                        <option value="CO">🇨🇴 Colombia</option>
+                        <option value="AR">🇦🇷 Argentina</option>
+                        <option value="CL">🇨🇱 Chile</option>
+                        <option value="PE">🇵🇪 Perú</option>
+                        <option value="EC">🇪🇨 Ecuador</option>
+                        <option value="VE">🇻🇪 Venezuela</option>
+                        <option value="DO">🇩🇴 República Dominicana</option>
+                        <option value="GT">🇬🇹 Guatemala</option>
+                        <option value="CR">🇨🇷 Costa Rica</option>
+                        <option value="PA">🇵🇦 Panamá</option>
+                        <option value="UY">🇺🇾 Uruguay</option>
+                        <option value="PY">🇵🇾 Paraguay</option>
+                        <option value="BO">🇧🇴 Bolivia</option>
+                        <option value="HN">🇭🇳 Honduras</option>
+                        <option value="SV">🇸🇻 El Salvador</option>
+                        <option value="NI">🇳🇮 Nicaragua</option>
+                        <option value="CU">🇨🇺 Cuba</option>
+                        <option value="PR">🇵🇷 Puerto Rico</option>
+                        <option value="ES">🇪🇸 España</option>
+                        <option value="US">🇺🇸 Estados Unidos</option>
+                        <option value="BR">🇧🇷 Brasil</option>
+                        <option value="CA">🇨🇦 Canadá</option>
+                        <option value="OTHER">🌍 Otro</option>
+                      </select>
+                      <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" color="#6B6B6B" />
                     </div>
                     {/* Sex selector */}
                     <div className="flex gap-2">
                       {[
-                        { value: 'male' as const, label: 'Papá 🐾', emoji: '👨' },
-                        { value: 'female' as const, label: 'Mamá 🐾', emoji: '👩' },
+                        { value: 'male' as const, label: 'Papá 🐾' },
+                        { value: 'female' as const, label: 'Mamá 🐾' },
                       ].map(opt => (
                         <button
                           key={opt.value}
@@ -384,23 +441,45 @@ function LoginContent() {
                 <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2" color="#6B6B6B" />
                 <input
                   type={showPass ? 'text' : 'password'}
-                  placeholder="Contrasena" required minLength={6}
+                  placeholder="Contraseña" required minLength={6}
                   value={password} onChange={e => setPassword(e.target.value)}
                   className="w-full pl-11 pr-12 py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30"
-                  style={{
-                    background: '#FFF7E9',
-                    border: '1px solid #E8E0D4',
-                    color: '#1F1F1F',
-                  }}
+                  style={{ background: '#FFF7E9', border: '1px solid #E8E0D4', color: '#1F1F1F' }}
                 />
                 <button type="button" onClick={() => setShowPass(!showPass)}
                   className="absolute right-4 top-1/2 -translate-y-1/2">
-                  {showPass
-                    ? <EyeOff size={18} color="#6B6B6B" />
-                    : <Eye size={18} color="#6B6B6B" />
-                  }
+                  {showPass ? <EyeOff size={18} color="#6B6B6B" /> : <Eye size={18} color="#6B6B6B" />}
                 </button>
               </div>
+
+              {/* Confirm password — only on register */}
+              <AnimatePresence>
+                {isRegister && (
+                  <motion.div
+                    key="confirm-pass"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="relative">
+                      <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2" color="#6B6B6B" />
+                      <input
+                        type={showConfirmPass ? 'text' : 'password'}
+                        placeholder="Confirmar contraseña" required minLength={6}
+                        value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+                        className="w-full pl-11 pr-12 py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30"
+                        style={{ background: '#FFF7E9', border: '1px solid #E8E0D4', color: '#1F1F1F' }}
+                      />
+                      <button type="button" onClick={() => setShowConfirmPass(!showConfirmPass)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2">
+                        {showConfirmPass ? <EyeOff size={18} color="#6B6B6B" /> : <Eye size={18} color="#6B6B6B" />}
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <AnimatePresence>
                 {error && (
