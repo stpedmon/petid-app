@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   // Handle PKCE code exchange (magic link / OAuth)
   if (code) {
     await supabase.auth.exchangeCodeForSession(code)
-    return NextResponse.redirect(new URL('/dashboard', origin))
+    return NextResponse.redirect(new URL('/', origin))
   }
 
   // Handle token hash (email confirmation link)
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.verifyOtp({ token_hash, type: type as any })
     if (!error) {
       // Email confirmed — redirect to dashboard
-      return NextResponse.redirect(new URL('/dashboard?confirmed=1', origin))
+      return NextResponse.redirect(new URL('/?confirmed=1', origin))
     }
     // Token invalid or expired
     return NextResponse.redirect(new URL('/login?error=token_expired', origin))

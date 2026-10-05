@@ -366,7 +366,10 @@ function NewPetPage() {
                   className="flex justify-center"
                 >
                   <div className="relative">
-                    <label className="cursor-pointer block">
+                    <div
+                      className="cursor-pointer block"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
                       <div
                         className="w-32 h-32 rounded-[2rem] flex items-center justify-center overflow-hidden"
                         style={{
@@ -396,8 +399,8 @@ function NewPetPage() {
                           </div>
                         )}
                       </div>
-                      <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhoto} className="hidden" />
-                    </label>
+                    </div>
+                    <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif,image/*" onChange={handlePhoto} className="hidden" />
                     {photoPreview && (
                       <motion.button
                         initial={{ scale: 0 }}

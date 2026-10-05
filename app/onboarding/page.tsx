@@ -2,7 +2,24 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { QrCode, Shield, Syringe, Bell, ArrowRight, Sparkles, FileCheck, CheckSquare, Square, Palette, Check, PawPrint, Plus, Minus } from 'lucide-react'
+import {
+  ArrowRight,
+  Sparkles,
+  FileCheck,
+  CheckSquare,
+  Square,
+  Palette,
+  Check,
+  PawPrint,
+  Plus,
+  Minus,
+  QrCode,
+  Heart,
+  Shield,
+  Bell,
+  MapPin,
+  Camera,
+} from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/AuthContext'
 import { useTheme } from '@/lib/ThemeContext'
@@ -10,42 +27,80 @@ import { themes, ThemeId } from '@/lib/themes'
 
 export const dynamic = 'force-dynamic'
 
-const infoSteps = [
+/* ─── Brand colors ─── */
+const C = {
+  coral: '#FF6B6B',
+  yellow: '#FFCC57',
+  sky: '#BEE3F8',
+  ivory: '#FFF7E9',
+  charcoal: '#1F1F1F',
+  white: '#FFFFFF',
+}
+
+/* ─── Onboarding feature slides ─── */
+const slides = [
   {
-    icon: <QrCode size={48} strokeWidth={1.5} />,
-    title: 'Tarjeta Digital Única',
-    subtitle: 'Tu mascota, siempre identificada',
-    description: 'Cada mascota recibe un código QR exclusivo que cualquiera puede escanear para ver su información y contactarte.',
-    color: '#FF6B6B',
-    gradient: 'linear-gradient(135deg, #FF6B6B, #FFC857)',
-    features: ['QR único por mascota', 'Perfil público seguro', 'Compatible con wallets'],
+    icon: <PawPrint size={44} strokeWidth={1.8} />,
+    title: '¿Qué es PetID?',
+    subtitle: 'Una identidad digital para tu mascota.',
+    description: 'PetID convierte la información de tu mascota en una tarjeta digital inteligente, siempre accesible.',
+    accent: C.coral,
+    bgGradient: `linear-gradient(180deg, ${C.ivory} 0%, ${C.white} 100%)`,
+    iconBg: C.coral,
   },
   {
-    icon: <Syringe size={48} strokeWidth={1.5} />,
-    title: 'Control de Vacunas',
-    subtitle: 'Nunca olvides una vacuna',
-    description: 'Registra vacunas, historial médico y recibe recordatorios automáticos cuando se acerque la próxima dosis.',
-    color: '#E65100',
-    gradient: 'linear-gradient(135deg, #E65100, #FF9800)',
-    features: ['Historial completo', 'Recordatorios automáticos', 'Notas del veterinario'],
+    icon: <QrCode size={44} strokeWidth={1.8} />,
+    title: 'Identidad digital única',
+    subtitle: 'Su identidad siempre a mano.',
+    description: 'Cada mascota recibe un QR exclusivo. Quien lo escanee puede ver su perfil y contactarte al instante.',
+    accent: C.yellow,
+    bgGradient: `linear-gradient(180deg, ${C.white} 0%, ${C.ivory} 100%)`,
+    iconBg: C.yellow,
   },
   {
-    icon: <Shield size={48} strokeWidth={1.5} />,
-    title: 'Red Veterinaria',
-    subtitle: 'Conectado con tu veterinario',
-    description: 'Tu veterinario puede actualizar el historial directamente. Sin papeles, sin cartillas que se pierden.',
-    color: '#4D91C6',
-    gradient: 'linear-gradient(135deg, #4D91C6, #BEE3F8)',
-    features: ['Panel veterinario', 'Actualizaciones en tiempo real', 'Historial compartido'],
+    icon: <Heart size={44} strokeWidth={1.8} />,
+    title: 'Historial de salud completo',
+    subtitle: 'Vacunas, historial y cuidados en un solo lugar.',
+    description: 'Registra vacunas, consultas y tratamientos. Tu veterinario puede actualizar todo directamente.',
+    accent: C.coral,
+    bgGradient: `linear-gradient(180deg, ${C.ivory} 0%, ${C.white} 100%)`,
+    iconBg: C.coral,
   },
   {
-    icon: <Bell size={48} strokeWidth={1.5} />,
-    title: 'Mascota Perdida',
-    subtitle: 'Tranquilidad para ti',
-    description: 'Si alguien encuentra a tu mascota, solo necesita escanear el QR para contactarte al instante.',
-    color: '#FFC857',
-    gradient: 'linear-gradient(135deg, #FFC857, #FF6B6B)',
-    features: ['Alerta de mascota perdida', 'Contacto directo', 'Geolocalización'],
+    icon: <Bell size={44} strokeWidth={1.8} />,
+    title: 'Recordatorios a tiempo',
+    subtitle: 'No olvides una vacuna, medicamento o cita.',
+    description: 'Recibe alertas automáticas cuando se acerque la próxima dosis o una cita veterinaria importante.',
+    accent: C.sky,
+    bgGradient: `linear-gradient(180deg, ${C.white} 0%, ${C.sky}30 100%)`,
+    iconBg: C.sky,
+  },
+  {
+    icon: <MapPin size={44} strokeWidth={1.8} />,
+    title: 'Todo en tu bolsillo',
+    subtitle: 'Si alguna vez se pierde, su información puede ayudarte a encontrarlo.',
+    description: 'Comparte el QR de tu mascota para que cualquier persona pueda identificarla y contactarte de inmediato.',
+    accent: C.yellow,
+    bgGradient: `linear-gradient(180deg, ${C.ivory} 0%, ${C.white} 100%)`,
+    iconBg: C.yellow,
+  },
+  {
+    icon: <Camera size={44} strokeWidth={1.8} />,
+    title: 'Para todas sus etapas de vida',
+    subtitle: 'Guarda sus momentos y acompaña cada etapa de su vida.',
+    description: 'Desde cachorro hasta senior, PetID crece con tu mascota y guarda toda su historia en un solo lugar.',
+    accent: C.coral,
+    bgGradient: `linear-gradient(180deg, ${C.white} 0%, ${C.ivory} 100%)`,
+    iconBg: C.coral,
+  },
+  {
+    icon: <Shield size={44} strokeWidth={1.8} />,
+    title: 'Más que salud',
+    subtitle: 'Siempre contigo.',
+    description: 'PetID es la plataforma de identidad digital que tu mascota merece. Moderna, segura y fácil de usar.',
+    accent: C.coral,
+    bgGradient: `linear-gradient(180deg, ${C.ivory} 0%, ${C.coral}10 100%)`,
+    iconBg: C.coral,
   },
 ]
 
@@ -66,28 +121,11 @@ export default function OnboardingPage() {
   const [selectedTheme, setSelectedTheme] = useState<ThemeId>('petid')
   const [petCount, setPetCount] = useState(1)
 
-  const totalSteps = infoSteps.length + 3 // info steps + theme step + pet count step + consent step
-  const isThemeStep = step === infoSteps.length
-  const isPetCountStep = step === infoSteps.length + 1
-  const isConsentStep = step === infoSteps.length + 2
-  const isLast = step === totalSteps - 1
-
-  const consentColor = '#FF6B6B'
-  const consentGradient = 'linear-gradient(135deg, #FF6B6B, #FFC857)'
-
-  const themeStepColor = '#FF6B6B'
-  const themeStepGradient = 'linear-gradient(135deg, #FF6B6B, #FFC857)'
-
-  const petCountColor = '#E65100'
-  const petCountGradient = 'linear-gradient(135deg, #E65100, #FF9800)'
-
-  const current = isConsentStep
-    ? { color: consentColor, gradient: consentGradient }
-    : isPetCountStep
-    ? { color: petCountColor, gradient: petCountGradient }
-    : isThemeStep
-    ? { color: themeStepColor, gradient: themeStepGradient }
-    : infoSteps[step]
+  // Steps: 7 feature slides + theme + pet count + consent = 10
+  const totalSteps = slides.length + 3
+  const isThemeStep = step === slides.length
+  const isPetCountStep = step === slides.length + 1
+  const isConsentStep = step === slides.length + 2
 
   const themeList = Object.values(themes)
 
@@ -108,15 +146,12 @@ export default function OnboardingPage() {
     localStorage.setItem('petid_onboarded', 'true')
     localStorage.setItem('petid_onboarding_pet_count', String(petCount))
     setSaving(false)
-    // Go to register first pet
     router.push('/pet/new?onboarding=1&total=' + petCount + '&current=1')
   }
 
   const next = () => {
     if (isConsentStep) {
       saveConsent()
-    } else if (isPetCountStep) {
-      setStep(s => s + 1)
     } else if (isThemeStep) {
       setThemeId(selectedTheme)
       setStep(s => s + 1)
@@ -126,143 +161,109 @@ export default function OnboardingPage() {
   }
 
   const skip = () => {
-    // Skip goes to theme step, can't skip theme or consent
-    setStep(infoSteps.length)
+    setStep(slides.length)
   }
 
-  return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: '#0a0f1a' }}>
-      {/* Animated background */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={step}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
-          className="absolute inset-0"
-        >
-          <div
-            className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full opacity-15"
-            style={{
-              background: `radial-gradient(circle, ${current.color} 0%, transparent 70%)`,
-              filter: 'blur(40px)',
-            }}
-          />
-        </motion.div>
-      </AnimatePresence>
+  /* ─── Current slide data (for feature slides only) ─── */
+  const currentSlide = step < slides.length ? slides[step] : null
 
-      {/* Skip button — only on info steps */}
-      <div className="relative z-20 flex justify-end px-6 pt-6 safe-top">
-        {!isConsentStep && (
+  return (
+    <div
+      className="min-h-screen flex flex-col relative overflow-hidden"
+      style={{
+        background: currentSlide ? currentSlide.bgGradient : `linear-gradient(180deg, ${C.ivory} 0%, ${C.white} 100%)`,
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        transition: 'background 0.5s ease',
+      }}
+    >
+      {/* Top bar: skip button */}
+      <div className="relative z-20 flex justify-between items-center px-6 pt-6 safe-top">
+        {step > 0 && !isConsentStep ? (
+          <button
+            onClick={() => setStep(s => s - 1)}
+            className="text-sm font-semibold transition-colors"
+            style={{ color: `${C.charcoal}80` }}
+          >
+            Atrás
+          </button>
+        ) : (
+          <div />
+        )}
+        {step < slides.length && (
           <button
             onClick={skip}
-            className="text-white/30 text-sm font-medium hover:text-white/50 transition-colors"
+            className="text-sm font-semibold transition-colors"
+            style={{ color: `${C.charcoal}60` }}
           >
             Omitir
           </button>
         )}
       </div>
 
-      {/* Content */}
+      {/* Main content area */}
       <div className="relative z-10 flex-1 flex flex-col justify-center px-6">
         <AnimatePresence mode="wait">
-          {isPetCountStep ? (
+          {/* ─── FEATURE SLIDES ─── */}
+          {currentSlide && (
             <motion.div
-              key="petcount"
+              key={`slide-${step}`}
               initial={{ x: 80, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -80, opacity: 0 }}
               transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+              className="text-center"
             >
-              <div className="text-center mb-8">
-                <motion.div
-                  initial={{ scale: 0, rotate: -20 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: 'spring', stiffness: 200, delay: 0.15 }}
-                  className="inline-flex items-center justify-center w-24 h-24 rounded-[28px] mb-5"
-                  style={{
-                    background: petCountGradient,
-                    boxShadow: `0 20px 60px ${petCountColor}40`,
-                  }}
-                >
-                  <PawPrint size={42} color="#fff" strokeWidth={1.5} />
-                </motion.div>
-
-                <motion.h2
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-2xl font-bold text-white mb-1 tracking-tight"
-                >
-                  ¿Cuántas mascotas tienes?
-                </motion.h2>
-                <motion.p
-                  initial={{ y: 15, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.25 }}
-                  className="text-sm text-white/40"
-                >
-                  Las registraremos una por una al terminar
-                </motion.p>
-              </div>
-
+              {/* Large icon circle */}
               <motion.div
-                initial={{ y: 15, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="flex items-center justify-center gap-6"
+                initial={{ scale: 0, rotate: -15 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: 'spring', stiffness: 180, delay: 0.1 }}
+                className="inline-flex items-center justify-center w-28 h-28 rounded-[32px] mb-8"
+                style={{
+                  background: currentSlide.iconBg,
+                  boxShadow: `0 16px 48px ${currentSlide.iconBg}40`,
+                }}
               >
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setPetCount(c => Math.max(1, c - 1))}
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                  style={{
-                    background: petCount <= 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    opacity: petCount <= 1 ? 0.3 : 1,
-                  }}
-                >
-                  <Minus size={22} color="#fff" />
-                </motion.button>
-
-                <motion.div
-                  key={petCount}
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="w-24 h-24 rounded-3xl flex items-center justify-center"
-                  style={{
-                    background: `${petCountColor}20`,
-                    border: `2px solid ${petCountColor}50`,
-                  }}
-                >
-                  <span className="text-5xl font-bold text-white">{petCount}</span>
-                </motion.div>
-
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setPetCount(c => Math.min(10, c + 1))}
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                  style={{
-                    background: petCount >= 10 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    opacity: petCount >= 10 ? 0.3 : 1,
-                  }}
-                >
-                  <Plus size={22} color="#fff" />
-                </motion.button>
+                <div className="text-white">{currentSlide.icon}</div>
               </motion.div>
 
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="text-center text-xs text-white/30 mt-4"
+              {/* Title */}
+              <motion.h2
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.18 }}
+                className="text-[28px] font-extrabold mb-3 tracking-tight leading-tight"
+                style={{ color: C.charcoal }}
               >
-                Puedes agregar más después
+                {currentSlide.title}
+              </motion.h2>
+
+              {/* Subtitle */}
+              <motion.p
+                initial={{ y: 15, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.26 }}
+                className="text-base font-semibold mb-4"
+                style={{ color: currentSlide.accent }}
+              >
+                {currentSlide.subtitle}
+              </motion.p>
+
+              {/* Description */}
+              <motion.p
+                initial={{ y: 15, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.32 }}
+                className="text-sm leading-relaxed max-w-xs mx-auto"
+                style={{ color: `${C.charcoal}99` }}
+              >
+                {currentSlide.description}
               </motion.p>
             </motion.div>
-          ) : isThemeStep ? (
+          )}
+
+          {/* ─── THEME STEP ─── */}
+          {isThemeStep && (
             <motion.div
               key="theme"
               initial={{ x: 80, opacity: 0 }}
@@ -270,40 +271,40 @@ export default function OnboardingPage() {
               exit={{ x: -80, opacity: 0 }}
               transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
             >
-              {/* Theme icon */}
-              <div className="text-center mb-6">
+              <div className="text-center mb-8">
                 <motion.div
-                  initial={{ scale: 0, rotate: -20 }}
+                  initial={{ scale: 0, rotate: -15 }}
                   animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: 'spring', stiffness: 200, delay: 0.15 }}
+                  transition={{ type: 'spring', stiffness: 180, delay: 0.1 }}
                   className="inline-flex items-center justify-center w-24 h-24 rounded-[28px] mb-5"
                   style={{
-                    background: themeStepGradient,
-                    boxShadow: `0 20px 60px ${themeStepColor}40`,
+                    background: `linear-gradient(135deg, ${C.coral}, ${C.yellow})`,
+                    boxShadow: `0 16px 48px ${C.coral}40`,
                   }}
                 >
-                  <Palette size={42} color="#fff" strokeWidth={1.5} />
+                  <Palette size={40} color="#fff" strokeWidth={1.8} />
                 </motion.div>
 
                 <motion.h2
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-2xl font-bold text-white mb-1 tracking-tight"
+                  transition={{ delay: 0.18 }}
+                  className="text-[26px] font-extrabold mb-2 tracking-tight"
+                  style={{ color: C.charcoal }}
                 >
                   Elige tu Estilo
                 </motion.h2>
                 <motion.p
                   initial={{ y: 15, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.25 }}
-                  className="text-sm text-white/40"
+                  transition={{ delay: 0.24 }}
+                  className="text-sm"
+                  style={{ color: `${C.charcoal}70` }}
                 >
                   Personaliza la apariencia de tu app
                 </motion.p>
               </div>
 
-              {/* Theme grid */}
               <motion.div
                 initial={{ y: 15, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -326,8 +327,8 @@ export default function OnboardingPage() {
                           className="w-12 h-12 rounded-2xl relative flex items-center justify-center transition-all"
                           style={{
                             background: `linear-gradient(135deg, ${t.primary}, ${t.accent})`,
-                            boxShadow: isSelected ? `0 4px 16px ${t.primary}50` : `0 2px 8px ${t.primary}25`,
-                            border: isSelected ? '2.5px solid #fff' : '2.5px solid transparent',
+                            boxShadow: isSelected ? `0 4px 16px ${t.primary}50` : `0 2px 8px ${t.primary}20`,
+                            border: isSelected ? `2.5px solid ${C.charcoal}` : '2.5px solid transparent',
                             transform: isSelected ? 'scale(1.1)' : 'scale(1)',
                           }}
                         >
@@ -343,7 +344,7 @@ export default function OnboardingPage() {
                         </div>
                         <span
                           className="text-[9px] font-semibold"
-                          style={{ color: isSelected ? '#fff' : 'rgba(255,255,255,0.45)' }}
+                          style={{ color: isSelected ? C.charcoal : `${C.charcoal}60` }}
                         >
                           {t.id === 'petid' ? 'Estándar' : t.name}
                         </span>
@@ -353,7 +354,111 @@ export default function OnboardingPage() {
                 </div>
               </motion.div>
             </motion.div>
-          ) : isConsentStep ? (
+          )}
+
+          {/* ─── PET COUNT STEP ─── */}
+          {isPetCountStep && (
+            <motion.div
+              key="petcount"
+              initial={{ x: 80, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -80, opacity: 0 }}
+              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <div className="text-center mb-8">
+                <motion.div
+                  initial={{ scale: 0, rotate: -15 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: 'spring', stiffness: 180, delay: 0.1 }}
+                  className="inline-flex items-center justify-center w-24 h-24 rounded-[28px] mb-5"
+                  style={{
+                    background: `linear-gradient(135deg, ${C.yellow}, ${C.coral})`,
+                    boxShadow: `0 16px 48px ${C.yellow}40`,
+                  }}
+                >
+                  <PawPrint size={40} color="#fff" strokeWidth={1.8} />
+                </motion.div>
+
+                <motion.h2
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.18 }}
+                  className="text-[26px] font-extrabold mb-2 tracking-tight"
+                  style={{ color: C.charcoal }}
+                >
+                  ¿Cuántas mascotas tienes?
+                </motion.h2>
+                <motion.p
+                  initial={{ y: 15, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.24 }}
+                  className="text-sm"
+                  style={{ color: `${C.charcoal}70` }}
+                >
+                  Las registraremos una por una al terminar
+                </motion.p>
+              </div>
+
+              <motion.div
+                initial={{ y: 15, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="flex items-center justify-center gap-6"
+              >
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setPetCount(c => Math.max(1, c - 1))}
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all"
+                  style={{
+                    background: petCount <= 1 ? `${C.charcoal}08` : `${C.charcoal}10`,
+                    border: `1.5px solid ${C.charcoal}15`,
+                    opacity: petCount <= 1 ? 0.35 : 1,
+                  }}
+                >
+                  <Minus size={22} color={C.charcoal} />
+                </motion.button>
+
+                <motion.div
+                  key={petCount}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="w-24 h-24 rounded-3xl flex items-center justify-center"
+                  style={{
+                    background: `${C.coral}12`,
+                    border: `2px solid ${C.coral}40`,
+                  }}
+                >
+                  <span className="text-5xl font-extrabold" style={{ color: C.charcoal }}>{petCount}</span>
+                </motion.div>
+
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setPetCount(c => Math.min(10, c + 1))}
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all"
+                  style={{
+                    background: petCount >= 10 ? `${C.charcoal}08` : `${C.charcoal}10`,
+                    border: `1.5px solid ${C.charcoal}15`,
+                    opacity: petCount >= 10 ? 0.35 : 1,
+                  }}
+                >
+                  <Plus size={22} color={C.charcoal} />
+                </motion.button>
+              </motion.div>
+
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="text-center text-xs mt-4"
+                style={{ color: `${C.charcoal}50` }}
+              >
+                Puedes agregar más después
+              </motion.p>
+            </motion.div>
+          )}
+
+          {/* ─── CONSENT STEP ─── */}
+          {isConsentStep && (
             <motion.div
               key="consent"
               initial={{ x: 80, opacity: 0 }}
@@ -361,35 +466,35 @@ export default function OnboardingPage() {
               exit={{ x: -80, opacity: 0 }}
               transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
             >
-              {/* Consent icon */}
               <div className="text-center mb-6">
                 <motion.div
-                  initial={{ scale: 0, rotate: -20 }}
+                  initial={{ scale: 0, rotate: -15 }}
                   animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: 'spring', stiffness: 200, delay: 0.15 }}
+                  transition={{ type: 'spring', stiffness: 180, delay: 0.1 }}
                   className="inline-flex items-center justify-center w-24 h-24 rounded-[28px] mb-5"
                   style={{
-                    background: consentGradient,
-                    boxShadow: `0 20px 60px ${consentColor}40`,
+                    background: `linear-gradient(135deg, ${C.coral}, ${C.yellow})`,
+                    boxShadow: `0 16px 48px ${C.coral}40`,
                   }}
                 >
-                  <FileCheck size={42} color="#fff" strokeWidth={1.5} />
+                  <FileCheck size={40} color="#fff" strokeWidth={1.8} />
                 </motion.div>
 
                 <motion.h2
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-2xl font-bold text-white mb-1 tracking-tight"
-                  style={{ fontFamily: "'Playfair Display', serif" }}
+                  transition={{ delay: 0.18 }}
+                  className="text-[26px] font-extrabold mb-2 tracking-tight"
+                  style={{ color: C.charcoal }}
                 >
                   Tratamiento de Datos
                 </motion.h2>
                 <motion.p
                   initial={{ y: 15, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.25 }}
-                  className="text-sm text-white/40"
+                  transition={{ delay: 0.24 }}
+                  className="text-sm"
+                  style={{ color: `${C.charcoal}70` }}
                 >
                   Antes de continuar, necesitamos tu consentimiento
                 </motion.p>
@@ -409,17 +514,23 @@ export default function OnboardingPage() {
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: 0.35 + i * 0.08 }}
                     className="flex gap-3 items-start p-3 rounded-xl"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+                    style={{
+                      background: C.white,
+                      border: `1px solid ${C.charcoal}10`,
+                      boxShadow: `0 2px 8px ${C.charcoal}06`,
+                    }}
                   >
                     <div
                       className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                      style={{ background: `${consentColor}25` }}
+                      style={{ background: `${C.coral}15` }}
                     >
-                      <span className="text-[10px] font-bold" style={{ color: consentColor }}>
+                      <span className="text-[10px] font-bold" style={{ color: C.coral }}>
                         {i + 1}
                       </span>
                     </div>
-                    <p className="text-xs text-white/60 leading-relaxed">{item}</p>
+                    <p className="text-xs leading-relaxed" style={{ color: `${C.charcoal}90` }}>
+                      {item}
+                    </p>
                   </motion.div>
                 ))}
               </motion.div>
@@ -430,100 +541,24 @@ export default function OnboardingPage() {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.65 }}
                 onClick={() => setConsentChecked(!consentChecked)}
-                className="flex items-center gap-3 mx-auto p-3 rounded-xl max-w-sm w-full"
+                className="flex items-center gap-3 mx-auto p-3 rounded-xl max-w-sm w-full transition-all"
                 style={{
-                  background: consentChecked ? `${consentColor}15` : 'rgba(255,255,255,0.03)',
-                  border: `1.5px solid ${consentChecked ? consentColor : 'rgba(255,255,255,0.1)'}`,
-                  transition: 'all 0.2s',
+                  background: consentChecked ? `${C.coral}10` : C.white,
+                  border: `1.5px solid ${consentChecked ? C.coral : `${C.charcoal}15`}`,
                 }}
               >
                 {consentChecked ? (
-                  <CheckSquare size={22} color={consentColor} strokeWidth={2} />
+                  <CheckSquare size={22} color={C.coral} strokeWidth={2} />
                 ) : (
-                  <Square size={22} color="rgba(255,255,255,0.25)" strokeWidth={1.5} />
+                  <Square size={22} color={`${C.charcoal}35`} strokeWidth={1.5} />
                 )}
-                <span className="text-xs font-medium text-left" style={{ color: consentChecked ? '#fff' : 'rgba(255,255,255,0.5)' }}>
+                <span
+                  className="text-xs font-medium text-left"
+                  style={{ color: consentChecked ? C.charcoal : `${C.charcoal}70` }}
+                >
                   Acepto el tratamiento de mis datos personales y los de mi mascota según lo descrito
                 </span>
               </motion.button>
-            </motion.div>
-          ) : (
-            <motion.div
-              key={step}
-              initial={{ x: 80, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -80, opacity: 0 }}
-              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-              className="text-center"
-            >
-              {/* Icon */}
-              <motion.div
-                initial={{ scale: 0, rotate: -20 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: 'spring', stiffness: 200, delay: 0.15 }}
-                className="inline-flex items-center justify-center w-28 h-28 rounded-[32px] mb-8"
-                style={{
-                  background: (current as typeof infoSteps[0]).gradient,
-                  boxShadow: `0 20px 60px ${current.color}40`,
-                }}
-              >
-                <div className="text-white">{(current as typeof infoSteps[0]).icon}</div>
-              </motion.div>
-
-              {/* Title */}
-              <motion.h2
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="text-3xl font-bold text-white mb-2 tracking-tight"
-                style={{ fontFamily: "'Playfair Display', serif" }}
-              >
-                {(current as typeof infoSteps[0]).title}
-              </motion.h2>
-
-              <motion.p
-                initial={{ y: 15, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="text-sm font-medium mb-4"
-                style={{ color: current.color }}
-              >
-                {(current as typeof infoSteps[0]).subtitle}
-              </motion.p>
-
-              <motion.p
-                initial={{ y: 15, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.35 }}
-                className="text-white/50 text-sm leading-relaxed max-w-xs mx-auto mb-8"
-              >
-                {(current as typeof infoSteps[0]).description}
-              </motion.p>
-
-              {/* Feature pills */}
-              <motion.div
-                initial={{ y: 15, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="flex flex-wrap justify-center gap-2"
-              >
-                {(current as typeof infoSteps[0]).features.map((f: string, i: number) => (
-                  <motion.span
-                    key={f}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.45 + i * 0.08, type: 'spring' }}
-                    className="px-3.5 py-1.5 rounded-full text-xs font-medium"
-                    style={{
-                      background: `${current.color}15`,
-                      color: current.color,
-                      border: `1px solid ${current.color}25`,
-                    }}
-                  >
-                    {f}
-                  </motion.span>
-                ))}
-              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -539,7 +574,7 @@ export default function OnboardingPage() {
               className="h-1.5 rounded-full"
               animate={{
                 width: i === step ? 28 : 8,
-                background: i === step ? current.color : 'rgba(255,255,255,0.15)',
+                background: i === step ? C.coral : `${C.charcoal}15`,
               }}
               transition={{ duration: 0.3 }}
             />
@@ -553,9 +588,13 @@ export default function OnboardingPage() {
           disabled={(isConsentStep && !consentChecked) || saving}
           className="w-full max-w-md mx-auto flex items-center justify-center gap-2 py-4 rounded-2xl text-white font-bold text-sm transition-opacity"
           style={{
-            background: current.gradient,
-            boxShadow: `0 8px 30px ${current.color}35`,
-            opacity: (isConsentStep && !consentChecked) ? 0.4 : 1,
+            background: isConsentStep && !consentChecked
+              ? `${C.charcoal}30`
+              : C.coral,
+            boxShadow: isConsentStep && !consentChecked
+              ? 'none'
+              : `0 8px 30px ${C.coral}35`,
+            opacity: saving ? 0.7 : 1,
           }}
         >
           {isConsentStep ? (
@@ -567,11 +606,6 @@ export default function OnboardingPage() {
                 Aceptar y Comenzar
               </>
             )
-          ) : isPetCountStep ? (
-            <>
-              Continuar
-              <ArrowRight size={18} />
-            </>
           ) : isThemeStep ? (
             <>
               Confirmar Tema

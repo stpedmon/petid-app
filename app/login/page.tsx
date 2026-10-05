@@ -78,7 +78,7 @@ function LoginContent() {
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
         if (signInError) throw signInError
-        router.push('/dashboard')
+        router.push('/')
       }
     } catch (err: any) {
       const msg = err.message || ''
