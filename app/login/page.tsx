@@ -55,7 +55,8 @@ function LoginContent() {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [phone, setPhone] = useState('')
-  const [phoneCode, setPhoneCode] = useState('')
+  const [phoneCountry, setPhoneCountry] = useState('') // country code like 'PA'
+  const [showPhonePicker, setShowPhonePicker] = useState(false)
   const [country, setCountry] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [sex, setSex] = useState<'male' | 'female'>('male')
@@ -87,7 +88,8 @@ function LoginContent() {
           return
         }
         const fullName = `${firstName.trim()} ${lastName.trim()}`
-        const fullPhone = phoneCode ? `${phoneCode} ${phone.trim()}` : phone.trim()
+        const selectedDial = phoneCodes.find(pc => pc.code === phoneCountry)?.dial || ''
+        const fullPhone = selectedDial ? `${selectedDial} ${phone.trim()}` : phone.trim()
         const siteUrl = window.location.origin
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
@@ -379,33 +381,62 @@ function LoginContent() {
                         />
                       </div>
                     </div>
-                    {/* Phone with country code */}
-                    <div className="flex gap-2">
-                      <div className="relative" style={{ minWidth: '110px' }}>
-                        <select
-                          value={phoneCode}
-                          onChange={e => setPhoneCode(e.target.value)}
-                          className="w-full pl-3 pr-7 py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30 appearance-none"
-                          style={{ background: '#FFF7E9', border: '1px solid #E8E0D4', color: phoneCode ? '#1F1F1F' : '#6B6B6B' }}
+                    {/* Phone with country code picker */}
+                    <div className="relative">
+                      <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid #E8E0D4', background: '#FFF7E9' }}>
+                        {/* Flag + code button */}
+                        <button
+                          type="button"
+                          onClick={() => setShowPhonePicker(!showPhonePicker)}
+                          className="flex items-center gap-1 px-3 py-3.5 text-sm font-medium shrink-0"
+                          style={{ borderRight: '1px solid #E8E0D4', background: '#FFF7E9', color: '#1F1F1F' }}
                         >
-                          <option value="" disabled>🌐 Cód.</option>
-                          {phoneCodes.map(pc => (
-                            <option key={pc.code} value={pc.dial}>
-                              {pc.flag} {pc.dial}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" color="#6B6B6B" />
-                      </div>
-                      <div className="relative flex-1">
-                        <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2" color="#6B6B6B" />
+                          <span className="text-lg leading-none">
+                            {phoneCountry ? phoneCodes.find(pc => pc.code === phoneCountry)?.flag : '🌐'}
+                          </span>
+                          <span className="text-xs" style={{ color: '#6B6B6B' }}>
+                            {phoneCountry ? phoneCodes.find(pc => pc.code === phoneCountry)?.dial : 'Cód.'}
+                          </span>
+                          <ChevronDown size={12} color="#6B6B6B" />
+                        </button>
+                        {/* Phone input */}
                         <input
                           type="tel" placeholder="Teléfono"
                           value={phone} onChange={e => setPhone(e.target.value)}
-                          className="w-full pl-10 pr-4 py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30"
-                          style={{ background: '#FFF7E9', border: '1px solid #E8E0D4', color: '#1F1F1F' }}
+                          className="flex-1 pl-3 pr-4 py-3.5 text-sm outline-none bg-transparent"
+                          style={{ color: '#1F1F1F' }}
                         />
                       </div>
+                      {/* Dropdown picker */}
+                      <AnimatePresence>
+                        {showPhonePicker && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute left-0 right-0 z-50 mt-1 rounded-xl shadow-lg overflow-hidden"
+                            style={{ background: '#FFFFFF', border: '1px solid #E8E0D4', maxHeight: '200px', overflowY: 'auto' }}
+                          >
+                            {phoneCodes.map(pc => (
+                              <button
+                                key={pc.code}
+                                type="button"
+                                onClick={() => { setPhoneCountry(pc.code); setShowPhonePicker(false) }}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-[#FFF0F0] text-left"
+                                style={{
+                                  color: '#1F1F1F',
+                                  background: phoneCountry === pc.code ? '#FFF0F0' : 'transparent',
+                                }}
+                              >
+                                <span className="text-lg">{pc.flag}</span>
+                                <span className="flex-1">{pc.name}</span>
+                                <span style={{ color: '#6B6B6B' }}>{pc.dial}</span>
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                     {/* Country selector */}
                     <div className="relative">
@@ -415,8 +446,7 @@ function LoginContent() {
                         value={country} onChange={e => {
                           const val = e.target.value
                           setCountry(val)
-                          const match = phoneCodes.find(pc => pc.code === val)
-                          if (match && !phoneCode) setPhoneCode(match.dial)
+                          if (!phoneCountry) setPhoneCountry(val)
                         }}
                         className="w-full pl-11 pr-10 py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30 appearance-none"
                         style={{ background: '#FFF7E9', border: '1px solid #E8E0D4', color: country ? '#1F1F1F' : '#6B6B6B' }}
