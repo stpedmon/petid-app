@@ -36,12 +36,15 @@ h1, h2, h3 {
   letter-spacing: -0.02em;
 }
 
-/* Smooth theme transitions */
+/* Smooth theme transitions — exclude html/body to prevent flash on first load */
 *, *::before, *::after {
   transition: background-color 0.35s cubic-bezier(.4,0,.2,1),
               color 0.35s cubic-bezier(.4,0,.2,1),
               border-color 0.35s cubic-bezier(.4,0,.2,1),
               box-shadow 0.35s cubic-bezier(.4,0,.2,1);
+}
+html, body {
+  transition: none !important;
 }
 
 /* Glassmorphism utility — use sparingly per brand guidelines */
