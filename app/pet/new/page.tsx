@@ -57,6 +57,8 @@ function NewPetPage() {
   const currentPet = parseInt(searchParams.get('current') || '1')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [saving, setSaving] = useState(false)
+  const [showCardAnimation, setShowCardAnimation] = useState(false)
+  const [createdPetId, setCreatedPetId] = useState<string | null>(null)
   const [step, setStep] = useState(1)
   const [direction, setDirection] = useState(1)
 
@@ -254,15 +256,21 @@ function NewPetPage() {
         })
       }
 
-      if (isOnboarding && currentPet < totalPets) {
-        // More pets to register
-        router.push(`/pet/new?onboarding=1&total=${totalPets}&current=${currentPet + 1}`)
-      } else {
-        router.push(`/pet/${pet.id}`)
-      }
+      // Show the card generation animation
+      setCreatedPetId(pet.id)
+      setSaving(false)
+      setShowCardAnimation(true)
+
+      // After animation, navigate
+      setTimeout(() => {
+        if (isOnboarding && currentPet < totalPets) {
+          router.push(`/pet/new?onboarding=1&total=${totalPets}&current=${currentPet + 1}`)
+        } else {
+          router.push(`/pet/${pet.id}`)
+        }
+      }, 4200)
     } catch (err: any) {
       alert(err.message || 'Error al registrar mascota')
-    } finally {
       setSaving(false)
     }
   }
@@ -932,6 +940,257 @@ function NewPetPage() {
           </motion.button>
         )}
       </div>
+
+      {/* ── Card Generation Animation Overlay ── */}
+      <AnimatePresence>
+        {showCardAnimation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+            style={{ background: theme.bg }}
+          >
+            {/* Particle burst background */}
+            {Array.from({ length: 20 }).map((_, i) => (
+              <motion.div
+                key={`particle-${i}`}
+                className="absolute rounded-full"
+                style={{
+                  width: 6 + Math.random() * 8,
+                  height: 6 + Math.random() * 8,
+                  background: [theme.primary, theme.accent, '#FFCC57', '#BEE3F8'][i % 4],
+                }}
+                initial={{
+                  x: 0, y: 0, opacity: 0, scale: 0,
+                }}
+                animate={{
+                  x: (Math.random() - 0.5) * 400,
+                  y: (Math.random() - 0.5) * 600,
+                  opacity: [0, 1, 1, 0],
+                  scale: [0, 1.5, 1, 0],
+                }}
+                transition={{
+                  duration: 2,
+                  delay: 1.5 + Math.random() * 0.5,
+                  ease: 'easeOut',
+                }}
+              />
+            ))}
+
+            {/* Scanning lines effect */}
+            <motion.div
+              className="absolute inset-x-0 h-1 blur-sm"
+              style={{ background: `linear-gradient(90deg, transparent, ${theme.primary}, transparent)` }}
+              initial={{ top: '20%', opacity: 0 }}
+              animate={{ top: ['20%', '80%', '20%'], opacity: [0, 0.6, 0] }}
+              transition={{ duration: 2, delay: 0.3, ease: 'easeInOut' }}
+            />
+
+            {/* Status text */}
+            <motion.div
+              className="absolute top-[15%] text-center"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <motion.p
+                className="text-sm font-semibold tracking-wide"
+                style={{ color: theme.textMuted }}
+                animate={{ opacity: [1, 0.4, 1] }}
+                transition={{ duration: 1.5, repeat: 2 }}
+              >
+                Generando tarjeta digital...
+              </motion.p>
+            </motion.div>
+
+            {/* The floating identity card */}
+            <motion.div
+              initial={{ scale: 0, rotateY: 180, opacity: 0 }}
+              animate={{
+                scale: [0, 1.1, 1],
+                rotateY: [180, 0, 0],
+                opacity: [0, 1, 1],
+              }}
+              transition={{ duration: 1.2, delay: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+              style={{ perspective: 1000 }}
+            >
+              <motion.div
+                animate={{
+                  y: [0, -12, 0],
+                  rotateX: [0, 2, 0],
+                  rotateZ: [0, -1, 1, 0],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+                className="relative"
+                style={{
+                  width: 300,
+                  borderRadius: 24,
+                  overflow: 'hidden',
+                  background: theme.bgCard,
+                  border: `2px solid ${theme.primary}40`,
+                  boxShadow: `0 30px 60px -12px ${theme.primary}30, 0 18px 36px -18px rgba(0,0,0,0.2), 0 0 40px ${theme.primary}15`,
+                }}
+              >
+                {/* Card header with gradient */}
+                <div
+                  className="px-5 pt-5 pb-8 text-center relative overflow-hidden"
+                  style={{
+                    background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`,
+                  }}
+                >
+                  {/* Decorative circles */}
+                  <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20"
+                    style={{ background: 'white' }} />
+                  <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full opacity-15"
+                    style={{ background: 'white' }} />
+
+                  <p className="text-[10px] font-bold tracking-[3px] text-white/70 uppercase mb-2">
+                    PetID · Identidad Digital
+                  </p>
+
+                  {/* Pet photo circle */}
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 1.2, type: 'spring', stiffness: 300 }}
+                    className="w-20 h-20 rounded-full mx-auto border-3 border-white/90 overflow-hidden flex items-center justify-center"
+                    style={{ background: 'rgba(255,255,255,0.2)' }}
+                  >
+                    {photoPreview ? (
+                      <img src={photoPreview} alt={name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-3xl">{species === 'feline' ? '🐱' : '🐶'}</span>
+                    )}
+                  </motion.div>
+
+                  <motion.p
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1.4 }}
+                    className="text-white font-extrabold text-lg mt-2 tracking-tight"
+                  >
+                    {name || 'Tu mascota'}
+                  </motion.p>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.5 }}
+                    className="text-white/70 text-xs font-medium"
+                  >
+                    {breed && breed !== 'Otro' ? breed : customBreed || (species === 'feline' ? 'Gato' : 'Perro')}
+                  </motion.p>
+                </div>
+
+                {/* Card body with details */}
+                <div className="px-5 py-4 space-y-3">
+                  {[
+                    { label: 'ID', value: createdPetId?.slice(0, 8).toUpperCase() || '••••••••', delay: 1.6 },
+                    { label: 'Especie', value: species === 'feline' ? '🐱 Felino' : '🐶 Canino', delay: 1.7 },
+                    { label: 'Sexo', value: sex === 'male' ? 'Macho' : sex === 'female' ? 'Hembra' : '—', delay: 1.8 },
+                  ].map((item) => (
+                    <motion.div
+                      key={item.label}
+                      initial={{ opacity: 0, x: -15 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: item.delay }}
+                      className="flex justify-between items-center"
+                    >
+                      <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: theme.textMuted }}>
+                        {item.label}
+                      </span>
+                      <span className="text-xs font-bold" style={{ color: theme.text }}>
+                        {item.value}
+                      </span>
+                    </motion.div>
+                  ))}
+
+                  {/* QR placeholder */}
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 2, type: 'spring', stiffness: 200 }}
+                    className="flex justify-center pt-2 pb-1"
+                  >
+                    <div
+                      className="w-16 h-16 rounded-xl flex items-center justify-center"
+                      style={{
+                        background: theme.bgCard,
+                        border: `2px solid ${theme.border}`,
+                        boxShadow: `0 4px 12px ${theme.primary}10`,
+                      }}
+                    >
+                      <div className="grid grid-cols-4 gap-[2px]">
+                        {Array.from({ length: 16 }).map((_, qi) => (
+                          <motion.div
+                            key={qi}
+                            className="w-[6px] h-[6px] rounded-[1px]"
+                            style={{ background: Math.random() > 0.35 ? theme.text : 'transparent' }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 2.1 + qi * 0.03 }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* Card footer */}
+                <div
+                  className="px-5 py-3 text-center"
+                  style={{ background: `${theme.primary}08`, borderTop: `1px solid ${theme.border}` }}
+                >
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 2.3 }}
+                    className="flex items-center justify-center gap-1.5"
+                  >
+                    <div className="w-2 h-2 rounded-full" style={{ background: '#22C55E' }} />
+                    <span className="text-[10px] font-bold" style={{ color: '#22C55E' }}>
+                      Tarjeta activa
+                    </span>
+                  </motion.div>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            {/* Success message */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 2.8 }}
+              className="text-center mt-8"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 2.6, type: 'spring', stiffness: 300 }}
+                className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center"
+                style={{ background: '#22C55E20' }}
+              >
+                <Check size={24} color="#22C55E" />
+              </motion.div>
+              <p className="font-extrabold text-lg" style={{ color: theme.text }}>
+                ¡Tarjeta creada!
+              </p>
+              <motion.p
+                className="text-xs mt-1"
+                style={{ color: theme.textMuted }}
+                animate={{ opacity: [1, 0.5, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                Cargando perfil...
+              </motion.p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
