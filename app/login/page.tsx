@@ -56,7 +56,6 @@ function LoginContent() {
   const [lastName, setLastName] = useState('')
   const [phone, setPhone] = useState('')
   const [phoneCountry, setPhoneCountry] = useState('') // country code like 'PA'
-  const [showPhonePicker, setShowPhonePicker] = useState(false)
   const [country, setCountry] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [sex, setSex] = useState<'male' | 'female'>('male')
@@ -381,62 +380,60 @@ function LoginContent() {
                         />
                       </div>
                     </div>
-                    {/* Phone with country code picker */}
-                    <div className="relative">
-                      <div className="flex rounded-xl overflow-hidden" style={{ border: '1px solid #E8E0D4', background: '#FFF7E9' }}>
-                        {/* Flag + code button */}
-                        <button
-                          type="button"
-                          onClick={() => setShowPhonePicker(!showPhonePicker)}
-                          className="flex items-center gap-1 px-3 py-3.5 text-sm font-medium shrink-0"
-                          style={{ borderRight: '1px solid #E8E0D4', background: '#FFF7E9', color: '#1F1F1F' }}
+                    {/* Phone with country code */}
+                    <div className="flex gap-2">
+                      {/* Country code selector — native select with flag image overlay */}
+                      <div className="relative shrink-0" style={{ width: '115px' }}>
+                        {phoneCountry && (
+                          <img
+                            src={`https://flagcdn.com/w40/${phoneCountry.toLowerCase()}.png`}
+                            alt=""
+                            className="absolute left-3 top-1/2 -translate-y-1/2 rounded-sm pointer-events-none"
+                            style={{ width: '22px', height: '16px', objectFit: 'cover' }}
+                          />
+                        )}
+                        {!phoneCountry && (
+                          <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" color="#6B6B6B" />
+                        )}
+                        <select
+                          value={phoneCountry}
+                          onChange={e => setPhoneCountry(e.target.value)}
+                          className="w-full py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30 appearance-none"
+                          style={{
+                            background: '#FFF7E9',
+                            border: '1px solid #E8E0D4',
+                            color: phoneCountry ? 'transparent' : '#6B6B6B',
+                            paddingLeft: '32px',
+                            paddingRight: '24px',
+                          }}
                         >
-                          <span className="text-lg leading-none">
-                            {phoneCountry ? phoneCodes.find(pc => pc.code === phoneCountry)?.flag : '🌐'}
+                          <option value="">Cód.</option>
+                          {phoneCodes.map(pc => (
+                            <option key={pc.code} value={pc.code}>
+                              {pc.flag} {pc.dial} {pc.name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" color="#6B6B6B" />
+                        {/* Show dial code next to flag */}
+                        {phoneCountry && (
+                          <span
+                            className="absolute top-1/2 -translate-y-1/2 text-xs font-medium pointer-events-none"
+                            style={{ left: '58px', color: '#1F1F1F' }}
+                          >
+                            {phoneCodes.find(pc => pc.code === phoneCountry)?.dial}
                           </span>
-                          <span className="text-xs" style={{ color: '#6B6B6B' }}>
-                            {phoneCountry ? phoneCodes.find(pc => pc.code === phoneCountry)?.dial : 'Cód.'}
-                          </span>
-                          <ChevronDown size={12} color="#6B6B6B" />
-                        </button>
-                        {/* Phone input */}
+                        )}
+                      </div>
+                      {/* Phone number input */}
+                      <div className="relative flex-1">
                         <input
                           type="tel" placeholder="Teléfono"
                           value={phone} onChange={e => setPhone(e.target.value)}
-                          className="flex-1 pl-3 pr-4 py-3.5 text-sm outline-none bg-transparent"
-                          style={{ color: '#1F1F1F' }}
+                          className="w-full pl-4 pr-4 py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30"
+                          style={{ background: '#FFF7E9', border: '1px solid #E8E0D4', color: '#1F1F1F' }}
                         />
                       </div>
-                      {/* Dropdown picker */}
-                      <AnimatePresence>
-                        {showPhonePicker && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
-                            transition={{ duration: 0.15 }}
-                            className="absolute left-0 right-0 z-50 mt-1 rounded-xl shadow-lg overflow-hidden"
-                            style={{ background: '#FFFFFF', border: '1px solid #E8E0D4', maxHeight: '200px', overflowY: 'auto' }}
-                          >
-                            {phoneCodes.map(pc => (
-                              <button
-                                key={pc.code}
-                                type="button"
-                                onClick={() => { setPhoneCountry(pc.code); setShowPhonePicker(false) }}
-                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-[#FFF0F0] text-left"
-                                style={{
-                                  color: '#1F1F1F',
-                                  background: phoneCountry === pc.code ? '#FFF0F0' : 'transparent',
-                                }}
-                              >
-                                <span className="text-lg">{pc.flag}</span>
-                                <span className="flex-1">{pc.name}</span>
-                                <span style={{ color: '#6B6B6B' }}>{pc.dial}</span>
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
                     </div>
                     {/* Country selector */}
                     <div className="relative">
