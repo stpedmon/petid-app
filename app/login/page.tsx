@@ -65,7 +65,20 @@ export default function LoginPage() {
         router.push('/dashboard')
       }
     } catch (err: any) {
-      setError(err.message || 'Error al iniciar sesion')
+      const msg = err.message || ''
+      if (msg.includes('User already registered')) {
+        setError('Este correo ya está registrado. Intenta iniciar sesión.')
+      } else if (msg.includes('Invalid login credentials')) {
+        setError('Correo o contraseña incorrectos.')
+      } else if (msg.includes('Email not confirmed')) {
+        setError('Revisa tu correo para confirmar tu cuenta antes de iniciar sesión.')
+      } else if (msg.includes('Password should be at least')) {
+        setError('La contraseña debe tener al menos 6 caracteres.')
+      } else if (msg.includes('Unable to validate email')) {
+        setError('Ingresa un correo electrónico válido.')
+      } else {
+        setError(msg || 'Error al iniciar sesión. Intenta de nuevo.')
+      }
     } finally {
       setLoading(false)
     }
