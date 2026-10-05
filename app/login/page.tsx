@@ -22,6 +22,32 @@ const floatingPaws = [
   { x: '40%', y: '90%', size: 19, delay: 1.8, duration: 6.8, rotate: -15 },
 ]
 
+const phoneCodes = [
+  { code: 'PA', dial: '+507', flag: '🇵🇦', name: 'Panamá' },
+  { code: 'MX', dial: '+52', flag: '🇲🇽', name: 'México' },
+  { code: 'CO', dial: '+57', flag: '🇨🇴', name: 'Colombia' },
+  { code: 'AR', dial: '+54', flag: '🇦🇷', name: 'Argentina' },
+  { code: 'CL', dial: '+56', flag: '🇨🇱', name: 'Chile' },
+  { code: 'PE', dial: '+51', flag: '🇵🇪', name: 'Perú' },
+  { code: 'EC', dial: '+593', flag: '🇪🇨', name: 'Ecuador' },
+  { code: 'VE', dial: '+58', flag: '🇻🇪', name: 'Venezuela' },
+  { code: 'DO', dial: '+1', flag: '🇩🇴', name: 'Rep. Dominicana' },
+  { code: 'GT', dial: '+502', flag: '🇬🇹', name: 'Guatemala' },
+  { code: 'CR', dial: '+506', flag: '🇨🇷', name: 'Costa Rica' },
+  { code: 'UY', dial: '+598', flag: '🇺🇾', name: 'Uruguay' },
+  { code: 'PY', dial: '+595', flag: '🇵🇾', name: 'Paraguay' },
+  { code: 'BO', dial: '+591', flag: '🇧🇴', name: 'Bolivia' },
+  { code: 'HN', dial: '+504', flag: '🇭🇳', name: 'Honduras' },
+  { code: 'SV', dial: '+503', flag: '🇸🇻', name: 'El Salvador' },
+  { code: 'NI', dial: '+505', flag: '🇳🇮', name: 'Nicaragua' },
+  { code: 'CU', dial: '+53', flag: '🇨🇺', name: 'Cuba' },
+  { code: 'PR', dial: '+1', flag: '🇵🇷', name: 'Puerto Rico' },
+  { code: 'ES', dial: '+34', flag: '🇪🇸', name: 'España' },
+  { code: 'US', dial: '+1', flag: '🇺🇸', name: 'Estados Unidos' },
+  { code: 'BR', dial: '+55', flag: '🇧🇷', name: 'Brasil' },
+  { code: 'CA', dial: '+1', flag: '🇨🇦', name: 'Canadá' },
+]
+
 function LoginContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -29,6 +55,7 @@ function LoginContent() {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [phone, setPhone] = useState('')
+  const [phoneCode, setPhoneCode] = useState('')
   const [country, setCountry] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [sex, setSex] = useState<'male' | 'female'>('male')
@@ -60,12 +87,13 @@ function LoginContent() {
           return
         }
         const fullName = `${firstName.trim()} ${lastName.trim()}`
+        const fullPhone = phoneCode ? `${phoneCode} ${phone.trim()}` : phone.trim()
         const siteUrl = window.location.origin
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { name: fullName, phone, country },
+            data: { name: fullName, phone: fullPhone, country },
             emailRedirectTo: `${siteUrl}/api/auth/callback`,
           }
         })
@@ -76,7 +104,7 @@ function LoginContent() {
             id: data.user.id,
             full_name: fullName,
             email,
-            phone,
+            phone: fullPhone,
             sex,
             country,
             role: 'owner'
@@ -351,22 +379,45 @@ function LoginContent() {
                         />
                       </div>
                     </div>
-                    {/* Phone */}
-                    <div className="relative">
-                      <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2" color="#6B6B6B" />
-                      <input
-                        type="tel" placeholder="Teléfono"
-                        value={phone} onChange={e => setPhone(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30"
-                        style={{ background: '#FFF7E9', border: '1px solid #E8E0D4', color: '#1F1F1F' }}
-                      />
+                    {/* Phone with country code */}
+                    <div className="flex gap-2">
+                      <div className="relative" style={{ minWidth: '110px' }}>
+                        <select
+                          value={phoneCode}
+                          onChange={e => setPhoneCode(e.target.value)}
+                          className="w-full pl-3 pr-7 py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30 appearance-none"
+                          style={{ background: '#FFF7E9', border: '1px solid #E8E0D4', color: phoneCode ? '#1F1F1F' : '#6B6B6B' }}
+                        >
+                          <option value="" disabled>🌐 Cód.</option>
+                          {phoneCodes.map(pc => (
+                            <option key={pc.code} value={pc.dial}>
+                              {pc.flag} {pc.dial}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" color="#6B6B6B" />
+                      </div>
+                      <div className="relative flex-1">
+                        <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2" color="#6B6B6B" />
+                        <input
+                          type="tel" placeholder="Teléfono"
+                          value={phone} onChange={e => setPhone(e.target.value)}
+                          className="w-full pl-10 pr-4 py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30"
+                          style={{ background: '#FFF7E9', border: '1px solid #E8E0D4', color: '#1F1F1F' }}
+                        />
+                      </div>
                     </div>
                     {/* Country selector */}
                     <div className="relative">
                       <Globe size={18} className="absolute left-4 top-1/2 -translate-y-1/2" color="#6B6B6B" />
                       <select
                         required
-                        value={country} onChange={e => setCountry(e.target.value)}
+                        value={country} onChange={e => {
+                          const val = e.target.value
+                          setCountry(val)
+                          const match = phoneCodes.find(pc => pc.code === val)
+                          if (match && !phoneCode) setPhoneCode(match.dial)
+                        }}
                         className="w-full pl-11 pr-10 py-3.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#FF6B6B]/30 appearance-none"
                         style={{ background: '#FFF7E9', border: '1px solid #E8E0D4', color: country ? '#1F1F1F' : '#6B6B6B' }}
                       >
