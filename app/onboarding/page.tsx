@@ -73,14 +73,16 @@ export default function OnboardingPage() {
   const [consentChecked, setConsentChecked] = useState(false)
   const [saving, setSaving] = useState(false)
   const [selectedTheme, setSelectedTheme] = useState<ThemeId>('petid')
+  const [selectedSpecies, setSelectedSpecies] = useState<'dog' | 'cat' | null>(null)
   const router = useRouter()
   const { user } = useAuth()
   const { setThemeId } = useTheme()
 
-  // 4 steps: Welcome → Features → Theme → Consent
-  const totalSteps = 4
-  const isThemeStep = step === 2
-  const isConsentStep = step === 3
+  // 5 steps: Welcome → Features → Species → Theme → Consent
+  const totalSteps = 5
+  const isSpeciesStep = step === 2
+  const isThemeStep = step === 3
+  const isConsentStep = step === 4
 
   const themeList = Object.values(themes)
   const activeTheme = themes[selectedTheme]
@@ -101,6 +103,10 @@ export default function OnboardingPage() {
       console.error('Error saving consent:', e)
     }
     localStorage.setItem('petid_onboarded', 'true')
+    localStorage.setItem('petid_onboarding_pet_count', '1')
+    if (selectedSpecies) {
+      localStorage.setItem('petid_onboarding_species', selectedSpecies)
+    }
     setSaving(false)
     router.push('/pet/new?onboarding=1&total=1&current=1')
   }
@@ -311,7 +317,71 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* ─── STEP 2: Theme Selection ─── */}
+            {/* ─── STEP 2: Species Selection ─── */}
+            {isSpeciesStep && (
+              <div className="flex-1 flex flex-col items-center justify-center text-center">
+                <motion.h1
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  className="text-[26px] font-extrabold tracking-tight leading-tight mb-3"
+                  style={{ color: C.charcoal }}
+                >
+                  ¿Cuál es tu <span style={{ color: C.coral }}>primera mascota?</span>
+                </motion.h1>
+                <motion.p
+                  initial={{ y: 15, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                  className="text-[13px] max-w-[280px] mx-auto mb-8"
+                  style={{ color: '#5b6470' }}
+                >
+                  Comienza registrando a tu mascota para crear su identidad digital.
+                </motion.p>
+
+                {/* Species cards */}
+                <div className="flex gap-4 justify-center mb-4">
+                  {[
+                    { id: 'dog' as const, emoji: '🐶', label: 'Perro' },
+                    { id: 'cat' as const, emoji: '🐱', label: 'Gato' },
+                  ].map((species, i) => (
+                    <motion.button
+                      key={species.id}
+                      initial={{ y: 30, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.3 + i * 0.1, type: 'spring' }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setSelectedSpecies(species.id)}
+                      className="flex-1 max-w-[140px] py-5 rounded-[20px] flex flex-col items-center gap-2 transition-all"
+                      style={{
+                        background: C.white,
+                        border: `2.5px solid ${selectedSpecies === species.id ? C.coral : '#e8e8e8'}`,
+                        boxShadow: selectedSpecies === species.id
+                          ? `0 8px 28px ${C.coral}25`
+                          : '0 6px 20px rgba(31,31,31,0.06)',
+                        transform: selectedSpecies === species.id ? 'scale(1.03)' : 'scale(1)',
+                      }}
+                    >
+                      <span className="text-[64px] leading-none">{species.emoji}</span>
+                      <span className="text-[14px] font-bold" style={{ color: C.charcoal }}>
+                        {species.label}
+                      </span>
+                    </motion.button>
+                  ))}
+                </div>
+
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="text-[10px]"
+                  style={{ color: '#8a919c' }}
+                >
+                  También podrás agregar más mascotas después.
+                </motion.p>
+              </div>
+            )}
+
+            {/* ─── STEP 3: Theme Selection ─── */}
             {isThemeStep && (
               <div className="flex-1 flex flex-col">
                 <div className="text-center mb-5">
@@ -567,6 +637,20 @@ export default function OnboardingPage() {
             }}
           >
             Comenzar
+            <ArrowRight size={18} />
+          </motion.button>
+        ) : isSpeciesStep ? (
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={next}
+            disabled={!selectedSpecies}
+            className="w-full max-w-md mx-auto flex items-center justify-center gap-2 py-4 rounded-[28px] text-white font-bold text-[15px] transition-opacity"
+            style={{
+              background: selectedSpecies ? C.coral : `${C.charcoal}30`,
+              boxShadow: selectedSpecies ? `0 10px 30px ${C.coral}30` : 'none',
+            }}
+          >
+            Continuar
             <ArrowRight size={18} />
           </motion.button>
         ) : isConsentStep ? (
