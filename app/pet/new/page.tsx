@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef, Suspense } from 'react'
+import { useState, useRef, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/AuthContext'
@@ -82,6 +82,19 @@ function NewPetPage() {
   const [microchip, setMicrochip] = useState('')
   const [selectedHobbies, setSelectedHobbies] = useState<string[]>([])
   const [selectedPersonality, setSelectedPersonality] = useState<string[]>([])
+  const [speciesFromOnboarding, setSpeciesFromOnboarding] = useState(false)
+
+  // Read species from onboarding localStorage and skip step 2 if already chosen
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('petid_onboarding_species')
+      if (saved === 'dog' || saved === 'cat') {
+        const mapped = saved === 'dog' ? 'canine' : 'feline'
+        setSpecies(mapped as 'canine' | 'feline')
+        setSpeciesFromOnboarding(true)
+      }
+    } catch {}
+  }, [])
 
   const compressToJpeg = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -173,14 +186,24 @@ function NewPetPage() {
   const goNext = () => {
     if (step < TOTAL_STEPS) {
       setDirection(1)
-      setStep(step + 1)
+      // Skip species step if already chosen in onboarding
+      if (step === 1 && speciesFromOnboarding) {
+        setStep(3)
+      } else {
+        setStep(step + 1)
+      }
     }
   }
 
   const goBack = () => {
     if (step > 1) {
       setDirection(-1)
-      setStep(step - 1)
+      // Skip species step if already chosen in onboarding
+      if (step === 3 && speciesFromOnboarding) {
+        setStep(1)
+      } else {
+        setStep(step - 1)
+      }
     }
   }
 
@@ -281,7 +304,9 @@ function NewPetPage() {
     exit: (d: number) => ({ x: d > 0 ? -300 : 300, opacity: 0 }),
   }
 
-  const progressWidth = `${(step / TOTAL_STEPS) * 100}%`
+  const effectiveSteps = speciesFromOnboarding ? TOTAL_STEPS - 1 : TOTAL_STEPS
+  const displayStep = speciesFromOnboarding && step > 2 ? step - 1 : step
+  const progressWidth = `${(displayStep / effectiveSteps) * 100}%`
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: theme.bg }}>
@@ -316,7 +341,7 @@ function NewPetPage() {
             <ChevronLeft size={20} color={theme.text} />
           </motion.button>
           <span className="text-xs font-semibold" style={{ color: theme.textMuted }}>
-            {step} de {TOTAL_STEPS}
+            {displayStep} de {effectiveSteps}
           </span>
           {step > 1 ? (
             <motion.button
