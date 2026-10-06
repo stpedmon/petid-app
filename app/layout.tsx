@@ -1,13 +1,21 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { Providers } from './providers'
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#FF6B6B',
+}
 
 export const metadata: Metadata = {
   title: 'PetID - Tarjeta Digital para Mascotas',
   description: 'Plataforma de identidad digital para mascotas con QR, historial médico y certificados de vacunación',
   manifest: '/manifest.json',
-  themeColor: '#FF6B6B',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',

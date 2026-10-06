@@ -83,14 +83,11 @@ function LoginContent() {
           })
         }
 
-        // If email confirmation is required, user won't have a session yet
+        // Always require email verification — sign out if autoconfirm gave us a session
         if (data.session) {
-          // Autoconfirm is on — go straight to onboarding
-          router.push('/onboarding')
-        } else {
-          // Show "check your email" screen
-          setPendingVerification(true)
+          await supabase.auth.signOut()
         }
+        setPendingVerification(true)
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
         if (signInError) throw signInError

@@ -20,6 +20,10 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html, body {
+  touch-action: manipulation;
+}
+
 body {
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--color-bg);
