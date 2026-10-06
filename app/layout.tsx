@@ -16,9 +16,13 @@ export const metadata: Metadata = {
   title: 'PetID - Tarjeta Digital para Mascotas',
   description: 'Plataforma de identidad digital para mascotas con QR, historial médico y certificados de vacunación',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon.png',
+    apple: '/icons/apple-touch-icon.png',
+  },
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'black-translucent',
+    statusBarStyle: 'default',
     title: 'PetID',
   },
   other: {
@@ -37,9 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        {/* apple-touch-icon and status-bar-style handled via metadata export */}
       </head>
       <body style={{ fontFamily: "'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", backgroundColor: '#FFF7E9' }}>
         <ServiceWorkerRegister />
