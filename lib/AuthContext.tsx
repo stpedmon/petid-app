@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { supabase } from './supabase'
 import { User } from '@supabase/supabase-js'
+import { ensureProfile } from './ensureProfile'
 
 interface AuthContextType {
   user: User | null
@@ -58,9 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     getUser()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user || null)
       if (session?.user) {
+        // Inicios con Google / Apple / Microsoft no pasan por el formulario de registro
+        if (event === 'SIGNED_IN') await ensureProfile(session.user)
         await fetchUserData(session.user.id)
       } else {
         setUserRole(null)

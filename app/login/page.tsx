@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
 import { Mail, Lock, Eye, EyeOff, User, ArrowRight, PawPrint } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import SocialLogin from '@/components/SocialLogin'
 import PhoneInput from 'react-phone-number-input'
 import type { Country } from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
@@ -72,7 +73,7 @@ function LoginContent() {
         if (signUpError) throw signUpError
 
         if (data.user) {
-          await supabase.from('petid_users').insert({
+          await supabase.from('petid_users').upsert({
             id: data.user.id,
             full_name: fullName,
             email,
@@ -80,7 +81,7 @@ function LoginContent() {
             sex,
             country,
             role: 'owner'
-          })
+          }, { onConflict: 'id', ignoreDuplicates: true })
         }
 
         // Always require email verification — sign out if autoconfirm gave us a session
@@ -482,6 +483,8 @@ function LoginContent() {
                 )}
               </motion.button>
             </form>
+
+            <SocialLogin onError={setError} />
           </div>
 
           {/* Footer */}
