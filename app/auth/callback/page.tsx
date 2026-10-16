@@ -1,10 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { PawPrint } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { ensureProfile } from '@/lib/ensureProfile'
+import PetIDLoader from '@/components/PetIDLoader'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +19,7 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     let done = false
-    const finish = async (userId?: string) => {
+    const finish = async () => {
       if (done) return
       done = true
       const { data: { user } } = await supabase.auth.getUser()
@@ -36,11 +35,11 @@ export default function AuthCallbackPage() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
-        finish(session.user.id)
+        finish()
       }
     })
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) finish(session.user.id)
+      if (session?.user) finish()
     })
     const timeout = setTimeout(() => { if (!done) setFailed(true) }, 12000)
 
@@ -62,10 +61,7 @@ export default function AuthCallbackPage() {
         </>
       ) : (
         <>
-          <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.2, repeat: Infinity }}>
-            <PawPrint size={44} color="#FF6B6B" strokeWidth={1.5} />
-          </motion.div>
-          <p className="mt-4 text-sm font-medium" style={{ color: '#FF6B6B99' }}>Conectando tu cuenta...</p>
+          <PetIDLoader label="Conectando tu cuenta..." />
         </>
       )}
     </div>

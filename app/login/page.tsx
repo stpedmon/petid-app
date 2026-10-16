@@ -3,28 +3,17 @@ import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
-import { Mail, Lock, Eye, EyeOff, User, ArrowRight, PawPrint } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, User, ArrowRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import SocialLogin from '@/components/SocialLogin'
 import PhoneInput from 'react-phone-number-input'
 import type { Country } from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
+import IdentityField from '@/components/IdentityField'
+import PetIDLoader from '@/components/PetIDLoader'
 
 export const dynamic = 'force-dynamic'
 
-// Floating paw positions — scattered around the screen
-const floatingPaws = [
-  { x: '8%', y: '12%', size: 20, delay: 0, duration: 5, rotate: -20 },
-  { x: '82%', y: '8%', size: 16, delay: 1.2, duration: 6.5, rotate: 15 },
-  { x: '15%', y: '35%', size: 14, delay: 2.5, duration: 5.5, rotate: 30 },
-  { x: '88%', y: '30%', size: 18, delay: 0.8, duration: 7, rotate: -10 },
-  { x: '5%', y: '60%', size: 22, delay: 3, duration: 6, rotate: 25 },
-  { x: '90%', y: '55%', size: 15, delay: 1.5, duration: 5.8, rotate: -35 },
-  { x: '25%', y: '80%', size: 17, delay: 2, duration: 6.2, rotate: 10 },
-  { x: '75%', y: '78%', size: 13, delay: 0.5, duration: 5.3, rotate: -25 },
-  { x: '50%', y: '5%', size: 12, delay: 3.5, duration: 7.2, rotate: 40 },
-  { x: '40%', y: '90%', size: 19, delay: 1.8, duration: 6.8, rotate: -15 },
-]
 
 function LoginContent() {
   const [email, setEmail] = useState('')
@@ -164,38 +153,8 @@ function LoginContent() {
     <div className="min-h-screen flex flex-col relative overflow-hidden"
       style={{ background: '#FFF7E9' }}>
 
-      {/* Floating paw prints */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {floatingPaws.map((paw, i) => (
-          <motion.div
-            key={i}
-            className="absolute"
-            style={{
-              left: paw.x,
-              top: paw.y,
-            }}
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{
-              opacity: [0, 0.3, 0.15, 0.3, 0],
-              scale: [0.5, 1, 1.1, 1, 0.5],
-              y: [0, -15, -25, -15, 0],
-              rotate: [paw.rotate, paw.rotate + 10, paw.rotate, paw.rotate - 10, paw.rotate],
-            }}
-            transition={{
-              duration: paw.duration,
-              delay: paw.delay,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          >
-            <PawPrint
-              size={paw.size}
-              color="#FF6B6B"
-              strokeWidth={1.8}
-            />
-          </motion.div>
-        ))}
-      </div>
+      {/* Campo de identidad (celdas QR + haz de escaneo) */}
+      <IdentityField />
 
       {/* Soft gradient orbs — warm brand colors */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -507,7 +466,7 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF7E9' }}>
-        <div className="w-8 h-8 rounded-full border-3 border-t-transparent animate-spin" style={{ borderColor: '#FF6B6B', borderTopColor: 'transparent' }} />
+        <PetIDLoader />
       </div>
     }>
       <LoginContent />

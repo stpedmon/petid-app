@@ -8,6 +8,7 @@ import TopBar from '@/components/TopBar'
 import BottomNav from '@/components/BottomNav'
 import { Building2, Plus, Search, CheckCircle, XCircle, Users, PawPrint, ChevronRight, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import PetIDLoader from '@/components/PetIDLoader'
 
 export const dynamic = 'force-dynamic'
 
@@ -201,7 +202,7 @@ function AdminContent() {
           <div className="space-y-2">
             {loading ? (
               <div className="py-12 flex justify-center">
-                <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: theme.primary, borderTopColor: 'transparent' }} />
+                <PetIDLoader size={40} color={theme.primary} accent={theme.accent} />
               </div>
             ) : filteredClinics.length === 0 ? (
               <div className="py-12 text-center">

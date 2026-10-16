@@ -9,6 +9,7 @@ import BottomNav from '@/components/BottomNav'
 import ProfilePhotoPrompt from '@/components/ProfilePhotoPrompt'
 import { PlusCircle, ChevronRight, Syringe, QrCode, Camera, Calendar, PawPrint, AlertCircle, Bell } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import PetIDLoader from '@/components/PetIDLoader'
 
 export const dynamic = 'force-dynamic'
 
@@ -165,12 +166,7 @@ export default function DashboardPage() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: theme.bg }}>
-        <motion.div
-          animate={{ scale: [1, 1.3, 1], rotate: [0, 10, -10, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        >
-          <PawPrint size={48} color={theme.primary} strokeWidth={1.5} />
-        </motion.div>
+        <PetIDLoader color={theme.primary} accent={theme.accent} />
       </div>
     )
   }

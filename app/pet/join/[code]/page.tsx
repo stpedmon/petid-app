@@ -2,9 +2,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { PawPrint, Heart } from 'lucide-react'
+import { Heart, PawPrint } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/AuthContext'
+import PetIDLoader from '@/components/PetIDLoader'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,9 +51,7 @@ export default function JoinPetPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ background: '#FFF7E9' }}>
       {state === 'loading' || (state === 'ready' && (authLoading || !user)) ? (
-        <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.2, repeat: Infinity }}>
-          <PawPrint size={44} color="#FF6B6B" strokeWidth={1.5} />
-        </motion.div>
+        <PetIDLoader />
       ) : state === 'error' ? (
         <>
           <p className="text-base font-semibold" style={{ color: '#1F1F1F' }}>{msg}</p>

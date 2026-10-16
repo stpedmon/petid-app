@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import QRCode from 'react-qr-code'
 import { toPng } from 'html-to-image'
 import Image from 'next/image'
+import PetIDLoader from '@/components/PetIDLoader'
 
 interface Pet {
   id: string; name: string; nickname: string | null; species: string; breed: string; sex: string;
@@ -351,12 +352,7 @@ export default function PetProfilePage() {
   if (loading || !pet) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: theme.bg }}>
-        <motion.div
-          animate={{ scale: [1, 1.3, 1], rotate: [0, 10, -10, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        >
-          <PawPrint size={48} color={theme.primary} strokeWidth={1.5} />
-        </motion.div>
+        <PetIDLoader color={theme.primary} accent={theme.accent} />
       </div>
     )
   }
