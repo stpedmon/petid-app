@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useTheme } from '@/lib/ThemeContext'
+import PetFamily from '@/components/PetFamily'
 import { getPetAge } from '@/lib/petAge'
 import BottomNav from '@/components/BottomNav'
 import { ArrowLeft, Syringe, FileText, Share2, QrCode, Camera, Plus, Save, X, Pencil, Trash2, Download, Clock, ChevronRight, Weight, Calendar, Dna, PawPrint, Compass, MapPin, ShieldCheck, ShieldAlert, Pill, Bug, Stethoscope, ClipboardList, Heart, AlertCircle } from 'lucide-react'
@@ -1319,6 +1320,9 @@ export default function PetProfilePage() {
                 </div>
               )}
             </div>
+
+            {/* Familia: papá y mamá comparten el mismo perfil */}
+            <PetFamily petId={pet.id} petName={pet.name} />
 
             {/* Hobbies */}
             {pet.hobbies && pet.hobbies.length > 0 && (

@@ -16,6 +16,11 @@ export default function Home() {
       if (!user) {
         router.replace('/login')
       } else {
+        const joinCode = localStorage.getItem('petid_join_code')
+        if (joinCode) {
+          router.replace(`/pet/join/${joinCode}`)
+          return
+        }
         const onboarded = localStorage.getItem('petid_onboarded')
         router.replace(onboarded ? '/dashboard' : '/onboarding')
       }
